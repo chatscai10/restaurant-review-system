@@ -1,0 +1,29 @@
+# 獨立版分店評價查詢系統 Python 依賴
+
+# 核心依賴
+selenium>=4.15.0      # 網頁自動化和爬取
+requests>=2.28.0      # HTTP 請求 (Telegram API)
+tkinter               # GUI 框架 (Python 內建)
+
+# Selenium WebDriver 管理 (自動下載 ChromeDriver)
+webdriver-manager>=4.0.0
+
+# 可選依賴 (提升體驗)
+Pillow>=9.0.0         # 圖像處理 (自定義圖標)
+
+# 開發和測試依賴
+pytest>=7.0.0         # 測試框架
+pytest-cov>=4.0.0     # 測試覆蓋率
+
+# 系統要求:
+# 1. Python 3.7+ (建議 3.9+)
+# 2. Chrome 瀏覽器 (自動檢測版本)
+# 3. 網絡連接 (爬取和 Telegram 通知)
+
+# 安裝指令:
+# pip install -r standalone_requirements.txt
+
+# 注意事項:
+# - ChromeDriver 會自動下載，無需手動安裝
+# - 如果在 Linux 上運行，可能需要額外的系統依賴
+# - 完全獨立運行，不依賴 Node.js 或其他後端服務

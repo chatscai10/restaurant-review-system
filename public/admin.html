@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛠️ 分店評價系統 - 管理後台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Microsoft JhengHei', sans-serif;
+        }
+        
+        .admin-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 15px 15px 0 0;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 15px 25px;
+            margin-right: 5px;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-weight: 500;
+            padding: 10px 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .btn-outline-gradient {
+            border: 2px solid;
+            border-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%) 1;
+            background: transparent;
+            color: #667eea;
+            border-radius: 25px;
+            font-weight: 500;
+            padding: 8px 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-gradient:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .store-item, .group-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .store-item:hover, .group-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+        
+        .platform-url {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #e9ecef;
+        }
+        
+        .status-badge {
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .alert {
+            border-radius: 15px;
+            border: none;
+            padding: 15px 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner-border {
+            color: #667eea;
+        }
+        
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .schedule-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .platform-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-12 col-xl-10">
+                <div class="admin-container p-4">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="mb-1">🛠️ 系統管理後台</h2>
+                            <p class="text-muted mb-0">分店評價自動化查詢系統設定</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-gradient me-2" onclick="window.open('/', '_blank')">
+                                <i class="fas fa-external-link-alt"></i> 查詢頁面
+                            </button>
+                            <button class="btn btn-gradient" onclick="saveAllSettings()">
+                                <i class="fas fa-save"></i> 儲存設定
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Tabs -->
+                    <ul class="nav nav-tabs mb-4" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#stores-tab">
+                                <i class="fas fa-store"></i> 分店管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#groups-tab">
+                                <i class="fas fa-users"></i> 通知群組
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#schedule-tab">
+                                <i class="fas fa-clock"></i> 排程設定
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#logs-tab">
+                                <i class="fas fa-list-alt"></i> 執行記錄
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content">
+                        <!-- 分店管理 Tab -->
+                        <div class="tab-pane fade show active" id="stores-tab">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0"><i class="fas fa-store"></i> 分店列表</h5>
+                                            <button class="btn btn-gradient btn-sm" onclick="addNewStore()">
+                                                <i class="fas fa-plus"></i> 新增分店
+                                            </button>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="stores-list">
+                                                <!-- 分店列表將在這裡動態載入 -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0"><i class="fas fa-info-circle"></i> 使用說明</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="alert alert-info">
+                                                <h6>📋 支援平台：</h6>
+                                                <ul class="mb-2">
+                                                    <li>🗺️ Google Maps</li>
+                                                    <li>🚗 UberEats</li>
+                                                    <li>🐼 Foodpanda</li>
+                                                </ul>
+                                                <hr>
+                                                <h6>🔗 網址格式：</h6>
+                                                <small>
+                                                    • Google Maps 支援短網址<br>
+                                                    • UberEats 需要完整商店網址<br>
+                                                    • Foodpanda 支援短連結
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="stats-card mt-3">
+                                        <h6><i class="fas fa-chart-bar"></i> 統計資訊</h6>
+                                        <div class="row text-center mt-3">
+                                            <div class="col-6">
+                                                <h4 id="total-stores">0</h4>
+                                                <small>總分店數</small>
+                                            </div>
+                                            <div class="col-6">
+                                                <h4 id="total-platforms">0</h4>
+                                                <small>總平台數</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 通知群組 Tab -->
+                        <div class="tab-pane fade" id="groups-tab">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0"><i class="fas fa-users"></i> Telegram 通知群組</h5>
+                                            <button class="btn btn-gradient btn-sm" onclick="addNewGroup()">
+                                                <i class="fas fa-plus"></i> 新增群組
+                                            </button>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="groups-list">
+                                                <!-- 群組列表將在這裡動態載入 -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0"><i class="fas fa-robot"></i> Telegram 設定</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Bot Token</label>
+                                                <input type="text" class="form-control" id="bot-token" 
+                                                       placeholder="請輸入 Telegram Bot Token">
+                                                <small class="text-muted">從 @BotFather 獲取</small>
+                                            </div>
+                                            <button class="btn btn-outline-gradient w-100" onclick="testAllGroups()">
+                                                <i class="fas fa-paper-plane"></i> 測試所有群組
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-warning mt-3">
+                                        <h6><i class="fas fa-exclamation-triangle"></i> 重要提醒</h6>
+                                        <ul class="mb-0">
+                                            <li>確保Bot已加入所有群組</li>
+                                            <li>群組ID必須包含負號(-)</li>
+                                            <li>建議先測試再啟用</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 排程設定 Tab -->
+                        <div class="tab-pane fade" id="schedule-tab">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="schedule-info">
+                                        <h5><i class="fas fa-clock"></i> 雲端自動化排程</h5>
+                                        <p class="mb-2">系統將自動在指定時間執行查詢並發送通知</p>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <strong>目前設定：</strong> 每天凌晨 01:00
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>狀態：</strong> 
+                                                <span class="badge bg-success">已啟用</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0"><i class="fas fa-cog"></i> 排程配置</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">執行時間</label>
+                                                        <select class="form-select" id="schedule-time">
+                                                            <option value="01:00">凌晨 01:00</option>
+                                                            <option value="02:00">凌晨 02:00</option>
+                                                            <option value="03:00">凌晨 03:00</option>
+                                                            <option value="06:00">早上 06:00</option>
+                                                            <option value="12:00">中午 12:00</option>
+                                                            <option value="18:00">下午 18:00</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">執行頻率</label>
+                                                        <select class="form-select" id="schedule-frequency">
+                                                            <option value="daily">每天</option>
+                                                            <option value="weekdays">工作日</option>
+                                                            <option value="weekly">每週</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="enable-schedule" checked>
+                                                    <label class="form-check-label" for="enable-schedule">
+                                                        啟用自動排程
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-gradient" onclick="updateSchedule()">
+                                                    <i class="fas fa-save"></i> 更新排程
+                                                </button>
+                                                <button class="btn btn-outline-gradient" onclick="testSchedule()">
+                                                    <i class="fas fa-play"></i> 立即測試
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0"><i class="fas fa-info"></i> 排程說明</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="alert alert-info">
+                                                <h6>⏰ 時間說明：</h6>
+                                                <p class="mb-2">所有時間均為台灣時間(GMT+8)</p>
+                                                
+                                                <h6>🔄 執行流程：</h6>
+                                                <ol class="mb-0">
+                                                    <li>自動啟動查詢</li>
+                                                    <li>依序檢查各分店</li>
+                                                    <li>收集評價數據</li>
+                                                    <li>發送Telegram通知</li>
+                                                    <li>記錄執行日誌</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card mt-3">
+                                        <div class="card-header">
+                                            <h6 class="mb-0"><i class="fas fa-chart-line"></i> 下次執行</h6>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <h5 id="next-execution">計算中...</h5>
+                                            <small class="text-muted">預計執行時間</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 執行記錄 Tab -->
+                        <div class="tab-pane fade" id="logs-tab">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="fas fa-list-alt"></i> 執行記錄</h5>
+                                    <div>
+                                        <button class="btn btn-outline-gradient btn-sm me-2" onclick="refreshLogs()">
+                                            <i class="fas fa-sync-alt"></i> 重新整理
+                                        </button>
+                                        <button class="btn btn-gradient btn-sm" onclick="clearLogs()">
+                                            <i class="fas fa-trash"></i> 清除記錄
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div id="execution-logs">
+                                        <!-- 執行記錄將在這裡顯示 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- 分店編輯 Modal -->
+    <div class="modal fade" id="storeModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-store"></i> 分店設定</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="store-form">
+                        <input type="hidden" id="store-id">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">分店名稱 *</label>
+                            <input type="text" class="form-control" id="store-name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Google Maps 網址</label>
+                            <input type="url" class="form-control" id="google-url" 
+                                   placeholder="https://maps.app.goo.gl/...">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">UberEats 網址</label>
+                            <input type="url" class="form-control" id="uber-url" 
+                                   placeholder="https://www.ubereats.com/store/...">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Foodpanda 網址</label>
+                            <input type="url" class="form-control" id="panda-url" 
+                                   placeholder="https://foodpanda.page.link/...">
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="store-enabled" checked>
+                            <label class="form-check-label" for="store-enabled">
+                                啟用此分店
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-gradient" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-gradient" onclick="saveStore()">儲存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 群組編輯 Modal -->
+    <div class="modal fade" id="groupModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-users"></i> Telegram 群組</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="group-form">
+                        <input type="hidden" id="group-id">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">群組名稱 *</label>
+                            <input type="text" class="form-control" id="group-name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">群組 ID *</label>
+                            <input type="text" class="form-control" id="group-chat-id" 
+                                   placeholder="-1002658082392" required>
+                            <small class="text-muted">必須包含負號(-)，從群組資訊中獲取</small>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="group-enabled" checked>
+                            <label class="form-check-label" for="group-enabled">
+                                啟用此群組
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-gradient" onclick="testSingleGroup()">
+                        <i class="fas fa-paper-plane"></i> 測試
+                    </button>
+                    <button type="button" class="btn btn-outline-gradient" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-gradient" onclick="saveGroup()">儲存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <div class="spinner-border mb-3" role="status"></div>
+                    <h6 id="loading-text">處理中...</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

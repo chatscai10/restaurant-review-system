@@ -1,0 +1,136 @@
+name: 🤖 每日分店評價自動查詢
+
+on:
+  schedule:
+    # 每天台灣時間凌晨1點執行 (UTC 17:00 = 台灣時間 01:00+8)
+    - cron: '0 17 * * *'
+  
+  # 手動觸發
+  workflow_dispatch:
+    inputs:
+      debug_mode:
+        description: '啟用調試模式'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+  
+jobs:
+  daily-restaurant-query:
+    name: 📊 執行每日分店查詢
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 檢出程式碼
+        uses: actions/checkout@v4
+        
+      - name: 📦 設置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 🔧 安裝依賴
+        run: |
+          npm ci
+          
+      - name: 🌐 安裝瀏覽器依賴
+        run: |
+          # 安裝 Chrome 穩定版
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+          
+          # 驗證安裝
+          google-chrome --version
+          
+      - name: ⚙️ 設置環境變數
+        run: |
+          echo "CHROME_EXECUTABLE_PATH=/usr/bin/google-chrome" >> $GITHUB_ENV
+          echo "NODE_ENV=production" >> $GITHUB_ENV
+          echo "CI=true" >> $GITHUB_ENV
+          
+      - name: 🔐 配置查詢設定
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+          QUERY_CONFIG: ${{ secrets.QUERY_CONFIG }}
+        run: |
+          echo "🔑 Telegram Bot Token: ${TELEGRAM_BOT_TOKEN:0:10}..."
+          echo "📱 Telegram Chat IDs: $TELEGRAM_CHAT_IDS"
+          echo "📋 Query Config 已設置"
+          
+      - name: 🚀 執行每日查詢
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+          QUERY_CONFIG: ${{ secrets.QUERY_CONFIG }}
+        run: |
+          echo "⏰ 開始執行每日分店評價查詢..."
+          echo "🕐 執行時間: $(date)"
+          
+          # 執行查詢腳本
+          node cloud_automation_scheduler.js
+          
+          echo "✅ 查詢執行完成"
+          
+      - name: 📄 上傳執行日誌
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: daily-query-logs-${{ github.run_number }}
+          path: |
+            scheduled_query_*.json
+            *.log
+          retention-days: 30
+          
+      - name: 📱 發送執行狀態通知
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+        run: |
+          # 發送失敗通知
+          curl -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"chat_id\": \"$(echo $TELEGRAM_CHAT_IDS | cut -d',' -f1)\",
+              \"text\": \"🚨 每日自動查詢失敗\\n⏰ 失敗時間: $(date)\\n🔗 查看詳情: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\\n\\n🤖 GitHub Actions 自動通知\"
+            }"
+
+  # 健康檢查任務
+  health-check:
+    name: 🏥 系統健康檢查
+    runs-on: ubuntu-latest
+    needs: daily-restaurant-query
+    if: always()
+    
+    steps:
+      - name: 📥 檢出程式碼
+        uses: actions/checkout@v4
+        
+      - name: 📊 生成健康報告
+        run: |
+          echo "📋 系統健康檢查報告" > health-report.txt
+          echo "執行時間: $(date)" >> health-report.txt
+          echo "GitHub Runner: ${{ runner.os }}" >> health-report.txt
+          echo "Node 版本: $NODE_VERSION" >> health-report.txt
+          echo "查詢任務狀態: ${{ needs.daily-restaurant-query.result }}" >> health-report.txt
+          
+          if [ "${{ needs.daily-restaurant-query.result }}" = "success" ]; then
+            echo "✅ 系統運行正常" >> health-report.txt
+          else
+            echo "❌ 系統需要檢查" >> health-report.txt
+          fi
+          
+          cat health-report.txt
+          
+      - name: 📄 保存健康報告
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-report-${{ github.run_number }}
+          path: health-report.txt
+          retention-days: 7

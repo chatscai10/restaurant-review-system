@@ -1,0 +1,92 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production builds
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Configuration files (contains sensitive data)
+config/*.json
+!config/.gitkeep
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Vercel
+.vercel
+
+# Test outputs
+test_results/
+screenshots/
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Debug files
+debug.log
+error.log
+
+# Python files (if any)
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Selenium cache
+selenium-cache/
+
+# Chrome user data
+chrome_user_*/
+chrome_cache_*/
