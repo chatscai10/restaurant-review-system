@@ -43,12 +43,12 @@ class WebCrawler {
 
             // Vercel雲端環境配置
             if (isVercel || isProduction) {
-                // 使用chrome-aws-lambda for Vercel
+                // 使用@sparticuz/chromium for Vercel
                 try {
-                    const chromium = require('chrome-aws-lambda');
+                    const chromium = require('@sparticuz/chromium');
                     browserConfig = {
                         ...browserConfig,
-                        executablePath: await chromium.executablePath,
+                        executablePath: await chromium.executablePath(),
                         args: [
                             ...chromium.args,
                             '--no-sandbox',
@@ -60,7 +60,7 @@ class WebCrawler {
                         ]
                     };
                 } catch (err) {
-                    console.log('chrome-aws-lambda not available, using puppeteer default');
+                    console.log('@sparticuz/chromium not available, using puppeteer default');
                     // 回退到預設配置，但添加更多無頭模式參數
                     browserConfig.args.push('--single-process', '--no-zygote');
                 }

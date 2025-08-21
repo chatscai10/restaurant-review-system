@@ -23,8 +23,7 @@
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "puppeteer": "^21.11.0",
-    "chrome-aws-lambda": "^10.1.0",
-    "puppeteer-core": "^21.11.0"
+    "@sparticuz/chromium": "^119.0.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
