@@ -38,18 +38,44 @@ class ReviewAnalyzer {
             
             console.log(`🔍 分析平台: ${platform}, URL: ${url.substring(0, 50)}...`);
 
-            // 根據平台選擇分析方法
-            switch (platform) {
-                case 'google':
-                    return await this.analyzeGoogleMaps(url);
-                case 'uber':
-                    return await this.analyzeUberEats(url);
-                case 'panda':
-                    return await this.analyzeFoodpanda(url);
-                default:
-                    // 通用分析方法
-                    return await this.analyzeGeneric(url, platform);
+            // 根據平台選擇分析方法（使用備用爬蟲）
+            let data;
+            try {
+                // 嘗試使用備用爬蟲方法
+                data = await this.crawler.scrapeWithFallback(url, platform);
+            } catch (error) {
+                console.warn(`備用爬蟲也失敗，使用傳統方法: ${error.message}`);
+                // 回退到原始方法
+                switch (platform) {
+                    case 'google':
+                        return await this.analyzeGoogleMaps(url);
+                    case 'uber':
+                        return await this.analyzeUberEats(url);
+                    case 'panda':
+                        return await this.analyzeFoodpanda(url);
+                    default:
+                        return await this.analyzeGeneric(url, platform);
+                }
             }
+
+            // 如果備用爬蟲成功，格式化結果
+            return {
+                success: true,
+                platform: platform,
+                storeName: data.name || '未知店家',
+                rating: data.rating,
+                reviewCount: data.reviewCount,
+                deliveryTime: data.deliveryTime,
+                deliveryFee: data.deliveryFee,
+                address: data.address,
+                phone: data.phone,
+                openingHours: data.openingHours,
+                priceLevel: data.priceLevel,
+                reviews: data.reviews || [],
+                url: url,
+                lastUpdated: new Date().toISOString(),
+                source: data.source || 'crawler'
+            };
 
         } catch (error) {
             console.error(`❌ 分析失敗 [${expectedPlatform}]:`, error.message);

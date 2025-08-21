@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const { CloudCrawler } = require('./cloudCrawler');
 
 class WebCrawler {
     constructor(options = {}) {
@@ -11,6 +12,8 @@ class WebCrawler {
         };
         
         this.browser = null;
+        this.cloudCrawler = new CloudCrawler();
+        this.useCloudMode = false;
     }
 
     /**
@@ -18,18 +21,52 @@ class WebCrawler {
      */
     async initBrowser() {
         if (!this.browser) {
-            this.browser = await puppeteer.launch({
-                headless: "new", // 修復 headless 警告
+            // 雲端環境配置
+            const isProduction = process.env.NODE_ENV === 'production';
+            const isVercel = process.env.VERCEL === '1';
+            
+            let browserConfig = {
+                headless: "new",
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-blink-features=AutomationControlled',
                     '--disable-features=VizDisplayCompositor',
                     '--disable-web-security',
-                    '--disable-features=VizDisplayCompositor',
-                    '--disable-dev-shm-usage'
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-renderer-backgrounding'
                 ]
-            });
+            };
+
+            // Vercel雲端環境配置
+            if (isVercel || isProduction) {
+                // 使用chrome-aws-lambda for Vercel
+                try {
+                    const chromium = require('chrome-aws-lambda');
+                    browserConfig = {
+                        ...browserConfig,
+                        executablePath: await chromium.executablePath,
+                        args: [
+                            ...chromium.args,
+                            '--no-sandbox',
+                            '--disable-setuid-sandbox',
+                            '--disable-dev-shm-usage',
+                            '--disable-gpu',
+                            '--single-process',
+                            '--no-zygote'
+                        ]
+                    };
+                } catch (err) {
+                    console.log('chrome-aws-lambda not available, using puppeteer default');
+                    // 回退到預設配置，但添加更多無頭模式參數
+                    browserConfig.args.push('--single-process', '--no-zygote');
+                }
+            }
+
+            this.browser = await puppeteer.launch(browserConfig);
         }
         return this.browser;
     }
@@ -78,6 +115,40 @@ class WebCrawler {
         });
         
         return page;
+    }
+
+    /**
+     * 嘗試使用Puppeteer，失敗時使用備用爬蟲
+     */
+    async scrapeWithFallback(url, platform) {
+        try {
+            // 首先嘗試Puppeteer
+            switch (platform) {
+                case 'google':
+                    return await this.scrapeGoogleMaps(url);
+                case 'uber':
+                    return await this.scrapeUberEats(url);
+                case 'panda':
+                    return await this.scrapeFoodpanda(url);
+                default:
+                    throw new Error(`不支援的平台: ${platform}`);
+            }
+        } catch (error) {
+            console.warn(`⚠️ Puppeteer失敗，使用簡化版爬蟲: ${error.message}`);
+            this.useCloudMode = true;
+            
+            // 使用備用雲端爬蟲
+            switch (platform) {
+                case 'google':
+                    return await this.cloudCrawler.scrapeGoogleMapsSimple(url);
+                case 'uber':
+                    return await this.cloudCrawler.scrapeUberEatsSimple(url);
+                case 'panda':
+                    return await this.cloudCrawler.scrapeFoodpandaSimple(url);
+                default:
+                    throw new Error(`備用爬蟲不支援平台: ${platform}`);
+            }
+        }
     }
 
     /**
