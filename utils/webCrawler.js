@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const fs = require('fs');
 const { CloudCrawler } = require('./cloudCrawler');
 
 class WebCrawler {
@@ -41,28 +42,44 @@ class WebCrawler {
                 ]
             };
 
-            // Vercel雲端環境配置
+            // 雲端環境配置
             if (isVercel || isProduction) {
-                // 使用@sparticuz/chromium for Vercel
-                try {
-                    const chromium = require('@sparticuz/chromium');
-                    browserConfig = {
-                        ...browserConfig,
-                        executablePath: await chromium.executablePath(),
-                        args: [
-                            ...chromium.args,
-                            '--no-sandbox',
-                            '--disable-setuid-sandbox',
-                            '--disable-dev-shm-usage',
-                            '--disable-gpu',
-                            '--single-process',
-                            '--no-zygote'
-                        ]
-                    };
-                } catch (err) {
-                    console.log('@sparticuz/chromium not available, using puppeteer default');
-                    // 回退到預設配置，但添加更多無頭模式參數
-                    browserConfig.args.push('--single-process', '--no-zygote');
+                // 檢查是否在Docker環境中
+                const isDocker = process.env.PUPPETEER_EXECUTABLE_PATH || 
+                                fs.existsSync('/usr/bin/google-chrome-stable');
+                
+                if (isDocker) {
+                    // Docker環境使用系統Chrome
+                    console.log('🐳 Docker環境：使用系統Chrome');
+                    browserConfig.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || 
+                                                  '/usr/bin/google-chrome-stable';
+                    browserConfig.args.push(
+                        '--single-process',
+                        '--no-zygote',
+                        '--disable-dev-shm-usage'
+                    );
+                } else {
+                    // Vercel環境使用@sparticuz/chromium
+                    try {
+                        const chromium = require('@sparticuz/chromium');
+                        browserConfig = {
+                            ...browserConfig,
+                            executablePath: await chromium.executablePath(),
+                            args: [
+                                ...chromium.args,
+                                '--no-sandbox',
+                                '--disable-setuid-sandbox',
+                                '--disable-dev-shm-usage',
+                                '--disable-gpu',
+                                '--single-process',
+                                '--no-zygote'
+                            ]
+                        };
+                    } catch (err) {
+                        console.log('@sparticuz/chromium not available, using puppeteer default');
+                        // 回退到預設配置，但添加更多無頭模式參數
+                        browserConfig.args.push('--single-process', '--no-zygote');
+                    }
                 }
             }
 
