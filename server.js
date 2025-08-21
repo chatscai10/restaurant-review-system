@@ -20,6 +20,8 @@ if (isProduction || isVercel) {
 }
 
 const { TelegramNotifier } = require('./utils/telegramNotifier');
+const { AutoScheduler } = require('./utils/scheduler');
+const { addSchedulerAPI, initializeScheduler } = require('./utils/serverScheduler');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -29,9 +31,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// 初始化評價分析器和Telegram通知器
+// 初始化評價分析器、Telegram通知器和自動排程器
 const reviewAnalyzer = new ReviewAnalyzer();
 const telegramNotifier = new TelegramNotifier();
+const scheduler = new AutoScheduler(reviewAnalyzer, telegramNotifier);
 
 // 主頁路由
 app.get('/', (req, res) => {
@@ -554,20 +557,15 @@ app.post('/api/admin/schedule', async (req, res) => {
 // 測試排程（立即執行一次查詢）
 app.post('/api/admin/test-schedule', async (req, res) => {
     try {
-        // 載入分店和群組配置
-        const stores = await loadJsonConfig(STORES_CONFIG_FILE, []);
-        const groups = await loadJsonConfig(GROUPS_CONFIG_FILE, []);
-        
-        if (stores.length === 0) {
-            return res.status(400).json({ 
-                success: false, 
-                error: '尚未配置任何分店' 
-            });
-        }
-        
-        // 記錄開始時間
-        const startTime = new Date();
         console.log('🧪 開始測試排程查詢...');
+        
+        // 使用新的排程器執行一次查詢
+        await scheduler.runOnce();
+        
+        res.json({ 
+            success: true, 
+            message: '測試查詢執行完成！請檢查Telegram群組是否收到通知。' 
+        });
         
         // 執行查詢
         const enabledStores = stores.filter(store => store.enabled !== false);
@@ -815,12 +813,18 @@ app.post('/api/cloud/report', async (req, res) => {
     }
 });
 
+// 添加排程器API
+addSchedulerAPI(app, scheduler);
+
 // 啟動服務器
 app.listen(PORT, () => {
     console.log(`🚀 分店評價查詢系統已啟動`);
     console.log(`📡 服務器運行於: http://localhost:${PORT}`);
     console.log(`🔍 打開瀏覽器訪問: http://localhost:${PORT}`);
     console.log(`⏰ 啟動時間: ${new Date().toLocaleString('zh-TW')}`);
+    
+    // 初始化並啟動排程器
+    initializeScheduler(scheduler);
 });
 
 module.exports = app;

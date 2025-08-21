@@ -796,6 +796,80 @@ class AdminManager {
             }
         }, 3000);
     }
+
+    // 新增：獲取排程器狀態
+    async getSchedulerStatus() {
+        try {
+            const response = await fetch('/api/admin/scheduler/status');
+            if (response.ok) {
+                const status = await response.json();
+                return status;
+            }
+        } catch (error) {
+            console.error('獲取排程狀態失敗:', error);
+        }
+        return null;
+    }
+
+    // 新增：更新排程狀態顯示
+    async updateScheduleStatus() {
+        try {
+            const status = await this.getSchedulerStatus();
+            if (status) {
+                // 更新狀態顯示
+                const statusElement = document.querySelector('.schedule-info');
+                if (statusElement) {
+                    const isRunning = status.isRunning;
+                    const lastExecution = status.lastExecution;
+                    const schedule = status.schedule;
+                    
+                    statusElement.innerHTML = `
+                        <h5><i class="fas fa-clock"></i> 雲端自動化排程</h5>
+                        <p class="mb-2">系統將自動在指定時間執行查詢並發送通知</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>目前設定：</strong> 
+                                ${schedule ? `${schedule.frequency === 'daily' ? '每天' : schedule.frequency === 'weekdays' ? '工作日' : '每週'} ${schedule.time}` : '未設定'}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>狀態：</strong> 
+                                <span class="badge ${schedule && schedule.enabled ? 'bg-success' : 'bg-warning'}">
+                                    ${schedule && schedule.enabled ? '已啟用' : '已停用'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <strong>排程器：</strong> 
+                                <span class="badge ${isRunning ? 'bg-success' : 'bg-danger'}">
+                                    ${isRunning ? '運行中' : '已停止'}
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>最後執行：</strong> 
+                                <small class="text-muted">
+                                    ${lastExecution ? new Date(lastExecution.timestamp).toLocaleString('zh-TW') : '尚未執行'}
+                                </small>
+                            </div>
+                        </div>
+                        ${lastExecution ? `
+                        <div class="row mt-1">
+                            <div class="col-md-12">
+                                <small class="text-muted">
+                                    執行結果: ${lastExecution.success ? '✅ 成功' : '❌ 失敗'}
+                                    ${lastExecution.error ? ` (${lastExecution.error})` : ''}
+                                    ${lastExecution.storesCount ? ` - 查詢了 ${lastExecution.storesCount} 間分店` : ''}
+                                </small>
+                            </div>
+                        </div>
+                        ` : ''}
+                    `;
+                }
+            }
+        } catch (error) {
+            console.error('更新排程狀態失敗:', error);
+        }
+    }
 }
 
 // 全域函數
@@ -870,3 +944,20 @@ function refreshLogs() {
 function clearLogs() {
     adminManager.clearLogs();
 }
+
+// 新增：排程器狀態管理
+function updateScheduleStatus() {
+    adminManager.updateScheduleStatus();
+}
+
+// 頁面載入時自動更新排程狀態
+document.addEventListener('DOMContentLoaded', function() {
+    // 等待管理器初始化後更新狀態
+    setTimeout(() => {
+        if (typeof adminManager !== 'undefined') {
+            updateScheduleStatus();
+            // 每30秒自動更新一次狀態
+            setInterval(updateScheduleStatus, 30000);
+        }
+    }, 1000);
+});
