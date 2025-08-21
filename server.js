@@ -1,7 +1,24 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { ReviewAnalyzer } = require('./utils/reviewAnalyzer');
+
+// 根據環境選擇分析器
+let ReviewAnalyzer;
+const isProduction = process.env.NODE_ENV === 'production';
+const isVercel = process.env.VERCEL === '1';
+
+if (isProduction || isVercel) {
+    // 雲端環境使用簡化版
+    console.log('🌐 雲端環境：使用簡化版分析器');
+    const { SimpleReviewAnalyzer } = require('./utils/reviewAnalyzer-simple');
+    ReviewAnalyzer = SimpleReviewAnalyzer;
+} else {
+    // 本地環境使用完整版
+    console.log('💻 本地環境：使用完整版分析器');
+    const { ReviewAnalyzer: FullAnalyzer } = require('./utils/reviewAnalyzer');
+    ReviewAnalyzer = FullAnalyzer;
+}
+
 const { TelegramNotifier } = require('./utils/telegramNotifier');
 
 const app = express();
