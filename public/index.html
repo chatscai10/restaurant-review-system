@@ -568,15 +568,15 @@
                                 <small>分析分店數</small>
                             </div>
                             <div class="col-md-3">
-                                <h4 class="text-success">${results.summary.averageRating.toFixed(1)}</h4>
+                                <h4 class="text-success">${(results.summary.averageRating || 0).toFixed(1)}</h4>
                                 <small>平均評分</small>
                             </div>
                             <div class="col-md-3">
-                                <h4 class="text-info">${results.summary.totalPlatforms}</h4>
+                                <h4 class="text-info">${results.summary.totalPlatforms || 0}</h4>
                                 <small>涵蓋平台數</small>
                             </div>
                             <div class="col-md-3">
-                                <h4 class="text-warning">${results.summary.totalReviews}</h4>
+                                <h4 class="text-warning">${results.summary.totalReviews || 0}</h4>
                                 <small>總評論數</small>
                             </div>
                         </div>
@@ -599,17 +599,18 @@
             
             Object.entries(store.platforms).forEach(([platform, data]) => {
                 if (data.success) {
-                    const ratingClass = getRatingClass(data.rating);
+                    const rating = parseFloat(data.rating) || 0;
+                    const ratingClass = getRatingClass(rating);
                     platformsHtml += `
                         <div class="col-md-4 mb-3">
                             <div class="card h-100">
                                 <div class="card-body text-center">
                                     <h6 class="card-title">${getPlatformName(platform)}</h6>
                                     <div class="rating-badge ${ratingClass}">
-                                        <i class="fas fa-star me-1"></i>${data.rating}/5.0
+                                        <i class="fas fa-star me-1"></i>${rating.toFixed(1)}/5.0
                                     </div>
                                     <p class="card-text mt-2">
-                                        <small class="text-muted">${data.reviewCount || 0} 則評論</small>
+                                        <small class="text-muted">${data.reviewCount || '0'} 則評論</small>
                                     </p>
                                 </div>
                             </div>
@@ -639,7 +640,7 @@
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">
                             <i class="fas fa-store me-2"></i>${store.name}
-                            <span class="badge bg-light text-dark ms-2">平均 ${store.averageRating.toFixed(1)}/5.0</span>
+                            <span class="badge bg-light text-dark ms-2">平均 ${(store.averageRating || 0).toFixed(1)}/5.0</span>
                         </h5>
                     </div>
                     <div class="card-body">
@@ -659,9 +660,10 @@
 
         // 輔助函數
         function getRatingClass(rating) {
-            if (rating >= 4.5) return 'rating-excellent';
-            if (rating >= 4.0) return 'rating-good';
-            if (rating >= 3.5) return 'rating-average';
+            const numRating = parseFloat(rating) || 0;
+            if (numRating >= 4.5) return 'rating-excellent';
+            if (numRating >= 4.0) return 'rating-good';
+            if (numRating >= 3.5) return 'rating-average';
             return 'rating-poor';
         }
 
