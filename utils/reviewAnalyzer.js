@@ -325,7 +325,7 @@ class ReviewAnalyzer {
             );
             
             if (bestPlatform[1].averageRating - worstPlatform[1].averageRating > 0.5) {
-                insights.push(`${bestPlatform[0]} 平台表現最佳 (${bestPlatform[1].averageRating.toFixed(1)})，${worstPlatform[0]} 平台需要改善 (${worstPlatform[1].averageRating.toFixed(1)})`);
+                insights.push(`${bestPlatform[0]} 平台表現最佳 (${(bestPlatform[1].averageRating || 0).toFixed(1)})，${worstPlatform[0]} 平台需要改善 (${(worstPlatform[1].averageRating || 0).toFixed(1)})`);
             }
         }
         

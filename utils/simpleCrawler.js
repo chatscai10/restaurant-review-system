@@ -62,7 +62,7 @@ class SimpleCrawler {
         const baseData = {
             google: {
                 name: '範例餐廳 (Google Maps)',
-                rating: '4.2',
+                rating: 4.2,
                 reviewCount: '256',
                 deliveryTime: null,
                 deliveryFee: null,
@@ -73,7 +73,7 @@ class SimpleCrawler {
             },
             uber: {
                 name: '範例餐廳 (UberEats)',
-                rating: '4.3',
+                rating: 4.3,
                 reviewCount: '189',
                 deliveryTime: '25-40分鐘',
                 deliveryFee: '30元',
@@ -84,7 +84,7 @@ class SimpleCrawler {
             },
             panda: {
                 name: '範例餐廳 (Foodpanda)',
-                rating: '4.1',
+                rating: 4.1,
                 reviewCount: '143',
                 deliveryTime: '30-45分鐘',
                 deliveryFee: '25元',

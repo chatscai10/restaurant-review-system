@@ -158,7 +158,7 @@ app.post('/api/analyze-stores', async (req, res) => {
             results.summary.averageRating = totalRating / validStores;
         }
 
-        console.log(`✅ 分析完成 - 平均評分: ${results.summary.averageRating.toFixed(2)}`);
+        console.log(`✅ 分析完成 - 平均評分: ${(results.summary.averageRating || 0).toFixed(2)}`);
         
         res.json(results);
 
@@ -349,7 +349,7 @@ function generateStoreInsights(storeResult) {
         const diff = maxRating - minRating;
         
         if (diff > 0.5) {
-            insights.push(`各平台評分差異較大(${diff.toFixed(1)}分)，建議統一服務標準`);
+            insights.push(`各平台評分差異較大(${(diff || 0).toFixed(1)}分)，建議統一服務標準`);
         }
     }
     
@@ -617,7 +617,7 @@ app.post('/api/admin/test-schedule', async (req, res) => {
                 // 計算平均評分
                 if (storeResult.summary.successPlatforms > 0) {
                     storeResult.summary.averageRating = 
-                        (storeResult.summary.averageRating / storeResult.summary.successPlatforms).toFixed(1);
+                        storeResult.summary.averageRating / storeResult.summary.successPlatforms;
                 } else {
                     storeResult.summary.averageRating = 0;
                 }
