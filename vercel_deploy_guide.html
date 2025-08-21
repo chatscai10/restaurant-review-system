@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vercel 部署引導</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Microsoft YaHei', Arial, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 { 
+            color: #333; 
+            text-align: center; 
+            margin-bottom: 30px; 
+            font-size: 2.5em;
+        }
+        .step {
+            background: #f8f9fa;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        .step h3 {
+            color: #28a745;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .step-number {
+            background: #28a745;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .link-button {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 10px 5px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .link-button:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        .github-link {
+            background: #333;
+        }
+        .env-vars {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }
+        .success-check {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #dee2e6;
+            color: #666;
+        }
+        .check-button {
+            background: #17a2b8;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 20px 10px;
+            transition: all 0.3s;
+        }
+        .check-button:hover {
+            background: #117a8b;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Vercel 雲端部署引導</h1>
+        
+        <div class="success-check">
+            <strong>✅ 準備工作已完成:</strong>
+            <ul style="margin-top: 10px;">
+                <li>✅ GitHub 倉庫已創建</li>
+                <li>✅ 所有代碼已推送</li>
+                <li>✅ 部署配置文件已準備</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">1</span>訪問 Vercel</h3>
+            <p>點擊下方按鈕前往 Vercel 新建專案頁面：</p>
+            <a href="https://vercel.com/new" target="_blank" class="link-button">前往 Vercel 部署</a>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">2</span>連接 GitHub 倉庫</h3>
+            <p>在 Vercel 頁面中：</p>
+            <ul style="margin: 10px 0; margin-left: 20px;">
+                <li>點擊 "Import Git Repository"</li>
+                <li>搜尋並選擇 "restaurant-review-system"</li>
+                <li>點擊 "Import"</li>
+            </ul>
+            <a href="https://github.com/chatscai10/restaurant-review-system" target="_blank" class="link-button github-link">查看 GitHub 倉庫</a>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">3</span>配置環境變數</h3>
+            <p>在 Vercel 部署頁面的 "Environment Variables" 區域添加以下變數：</p>
+            <div class="env-vars">
+TELEGRAM_BOT_TOKEN = 7659930552:AAF_jF1rAXFnjFO176-9X5fKfBwbrko8BNc<br>
+TELEGRAM_CHAT_IDS = -1002658082392<br>
+NODE_ENV = production
+            </div>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">4</span>完成部署</h3>
+            <p>確認所有設定後點擊 "Deploy" 開始部署。部署完成後會獲得網址。</p>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ 重要提醒:</strong> 
+            <p>部署完成後，請使用下方按鈕檢查部署狀態，確保所有功能正常運作。</p>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="check-button" onclick="checkDeployment()">🔍 檢查部署狀態</button>
+            <button class="check-button" onclick="openAdmin()">🔧 開啟管理後台</button>
+        </div>
+
+        <div id="deployment-status" style="margin-top: 20px;"></div>
+
+        <div class="footer">
+            <p>📊 <strong>項目資訊:</strong></p>
+            <p>GitHub: https://github.com/chatscai10/restaurant-review-system</p>
+            <p>本指南自動生成於: <span id="current-time"></span></p>
+        </div>
+    </div>
+
+    <script>
+        // 顯示當前時間
+        document.getElementById('current-time').textContent = new Date().toLocaleString('zh-TW');
+
+        async function checkDeployment() {
+            const statusDiv = document.getElementById('deployment-status');
+            statusDiv.innerHTML = '<p>🔍 正在檢查部署狀態...</p>';
+            
+            const urls = [
+                'https://restaurant-review-system.vercel.app',
+                'https://restaurant-review-system-chatscai10.vercel.app',
+                'https://restaurant-review-system-git-master-chatscai10.vercel.app'
+            ];
+            
+            let foundWorking = false;
+            let results = '';
+            
+            for (const url of urls) {
+                try {
+                    const response = await fetch(url, { 
+                        method: 'HEAD',
+                        mode: 'no-cors'
+                    });
+                    results += `<p>✅ ${url} - 可訪問</p>`;
+                    foundWorking = true;
+                    break;
+                } catch (error) {
+                    results += `<p>❌ ${url} - 無法訪問</p>`;
+                }
+            }
+            
+            if (foundWorking) {
+                statusDiv.innerHTML = `
+                    <div class="success-check">
+                        <strong>🎉 部署成功！</strong>
+                        ${results}
+                        <p style="margin-top: 15px;">
+                            <a href="${urls[0]}" target="_blank" class="link-button">訪問主頁</a>
+                            <a href="${urls[0]}/admin" target="_blank" class="link-button">管理後台</a>
+                        </p>
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="warning">
+                        <strong>⚠️ 尚未部署完成</strong>
+                        ${results}
+                        <p>請完成 Vercel 部署後再次檢查。</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function openAdmin() {
+            const baseUrl = 'https://restaurant-review-system.vercel.app';
+            window.open(baseUrl + '/admin', '_blank');
+        }
+    </script>
+</body>
+</html>
