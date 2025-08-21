@@ -1,4 +1,5 @@
 const { SimpleCrawler } = require('./simpleCrawler');
+const { RealDataCrawler } = require('./realDataCrawler');
 
 /**
  * 簡化版評價分析器 - 雲端環境適用
@@ -7,6 +8,7 @@ const { SimpleCrawler } = require('./simpleCrawler');
 class SimpleReviewAnalyzer {
     constructor() {
         this.crawler = new SimpleCrawler();
+        this.realCrawler = new RealDataCrawler();
         
         // 平台識別模式
         this.platformPatterns = {
@@ -41,12 +43,54 @@ class SimpleReviewAnalyzer {
             // 識別平台
             const platform = expectedPlatform || this.identifyPlatform(url);
             
-            console.log(`🔍 簡化版分析平台: ${platform}, URL: ${url.substring(0, 50)}...`);
+            console.log(`🔍 真實數據分析平台: ${platform}, URL: ${url.substring(0, 50)}...`);
 
-            // 使用簡化版爬蟲
-            const result = await this.crawler.analyzeRestaurant(url, platform);
-            
-            return result;
+            // 首先嘗試真實數據抓取
+            try {
+                let data;
+                switch (platform) {
+                    case 'google':
+                        data = await this.realCrawler.scrapeGoogleMapsReal(url);
+                        break;
+                    case 'uber':
+                        data = await this.realCrawler.scrapeUberEatsReal(url);
+                        break;
+                    case 'panda':
+                        data = await this.realCrawler.scrapeFoodpandaReal(url);
+                        break;
+                    default:
+                        throw new Error(`不支援的平台: ${platform}`);
+                }
+
+                // 格式化真實數據結果
+                return {
+                    success: true,
+                    platform: platform,
+                    storeName: data.name || '未知餐廳',
+                    rating: data.rating,
+                    reviewCount: data.reviewCount,
+                    deliveryTime: data.deliveryTime,
+                    deliveryFee: data.deliveryFee,
+                    address: data.address,
+                    phone: data.phone,
+                    openingHours: data.openingHours,
+                    priceLevel: data.priceLevel,
+                    reviews: [],
+                    url: url,
+                    lastUpdated: new Date().toISOString(),
+                    source: 'real-data-crawler',
+                    note: data.note
+                };
+
+            } catch (realError) {
+                console.warn(`真實數據抓取失敗，使用備用數據: ${realError.message}`);
+                
+                // 如果真實數據抓取失敗，使用簡化版作為備用
+                const result = await this.crawler.analyzeRestaurant(url, platform);
+                result.note = '真實數據暫時無法獲取，顯示為參考數據';
+                result.source = 'fallback-data';
+                return result;
+            }
 
         } catch (error) {
             console.error(`❌ 簡化版分析失敗 [${expectedPlatform}]:`, error.message);
