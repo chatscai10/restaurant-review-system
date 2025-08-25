@@ -1,0 +1,5 @@
+FORCE_DEPLOY_TIMESTAMP: 2025-08-25T18:15:00Z
+DEPLOY_REASON: Fix browser cache and memory system deployment
+VERSION: 2.0.0
+FEATURES: Memory system, rating change indicators, platform links
+COMMIT_HASH: 81798c8
