@@ -1,0 +1,35 @@
+# Railway 部署忽略檔案
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+*.log
+
+# 開發相關
+.env.local
+.env.development
+test_*.js
+debug_*.js
+*test*.py
+
+# 文檔和說明檔案（減少部署大小）
+*.md
+使用說明.md
+問題分析與修復報告.md
+專案總結.md
+
+# 臨時檔案
+nul
+*.png
+*.tmp
+*.cache
+
+# Windows 相關
+Thumbs.db
+desktop.ini
+
+# 測試相關檔案
+test/
+tests/
+spec/
