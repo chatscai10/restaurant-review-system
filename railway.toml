@@ -1,0 +1,32 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+startCommand = "node railway-server.js"
+healthcheckPath = "/"
+healthcheckTimeout = 300
+restartPolicyType = "always"
+
+[[deploy.environmentVariables]]
+name = "NODE_ENV"
+value = "production"
+
+[[deploy.environmentVariables]]
+name = "PUPPETEER_EXECUTABLE_PATH" 
+value = "/usr/bin/google-chrome-stable"
+
+[[deploy.environmentVariables]]
+name = "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD"
+value = "true"
+
+[[deploy.environmentVariables]]
+name = "TELEGRAM_BOT_TOKEN"
+value = "7659930552:AAF_jF1rAXFnjFO176-9X5fKfBwbrko8BNc"
+
+[[deploy.environmentVariables]]
+name = "TELEGRAM_CHAT_IDS"
+value = "-1002658082392"
+
+[[deploy.environmentVariables]]
+name = "PORT"
+value = "3003"
