@@ -2,26 +2,49 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
-// 根據環境選擇分析器
+// 安全的模組載入
 let ReviewAnalyzer;
+let TelegramNotifier;
+let AutoScheduler;
+let addSchedulerAPI;
+let initializeScheduler;
+
 const isProduction = process.env.NODE_ENV === 'production';
 const isVercel = process.env.VERCEL === '1';
 
-if (isProduction || isVercel) {
-    // 雲端環境使用簡化版
-    console.log('🌐 雲端環境：使用簡化版分析器');
-    const { SimpleReviewAnalyzer } = require('./utils/reviewAnalyzer-simple');
-    ReviewAnalyzer = SimpleReviewAnalyzer;
-} else {
-    // 本地環境使用完整版
-    console.log('💻 本地環境：使用完整版分析器');
-    const { ReviewAnalyzer: FullAnalyzer } = require('./utils/reviewAnalyzer');
-    ReviewAnalyzer = FullAnalyzer;
-}
+console.log(`🚀 啟動模式: ${isProduction ? 'Production' : 'Development'}`);
+console.log(`📍 環境檢測: Vercel=${isVercel}, NODE_ENV=${process.env.NODE_ENV}`);
 
-const { TelegramNotifier } = require('./utils/telegramNotifier');
-const { AutoScheduler } = require('./utils/scheduler');
-const { addSchedulerAPI, initializeScheduler } = require('./utils/serverScheduler');
+try {
+    if (isProduction || isVercel) {
+        // 雲端環境使用簡化版
+        console.log('🌐 雲端環境：載入簡化版分析器');
+        const { SimpleReviewAnalyzer } = require('./utils/reviewAnalyzer-simple');
+        ReviewAnalyzer = SimpleReviewAnalyzer;
+    } else {
+        // 本地環境使用完整版
+        console.log('💻 本地環境：載入完整版分析器');
+        const { ReviewAnalyzer: FullAnalyzer } = require('./utils/reviewAnalyzer');
+        ReviewAnalyzer = FullAnalyzer;
+    }
+
+    // 載入其他模組
+    const telegramModule = require('./utils/telegramNotifier');
+    TelegramNotifier = telegramModule.TelegramNotifier;
+    
+    const schedulerModule = require('./utils/scheduler');
+    AutoScheduler = schedulerModule.AutoScheduler;
+    
+    const serverSchedulerModule = require('./utils/serverScheduler');
+    addSchedulerAPI = serverSchedulerModule.addSchedulerAPI;
+    initializeScheduler = serverSchedulerModule.initializeScheduler;
+    
+    console.log('✅ 所有模組載入成功');
+    
+} catch (error) {
+    console.error('❌ 模組載入錯誤:', error.message);
+    console.log('🔧 使用後備啟動模式');
+}
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -31,10 +54,33 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// 初始化評價分析器、Telegram通知器和自動排程器
-const reviewAnalyzer = new ReviewAnalyzer();
-const telegramNotifier = new TelegramNotifier();
-const scheduler = new AutoScheduler(reviewAnalyzer, telegramNotifier);
+// 安全初始化服務
+let reviewAnalyzer;
+let telegramNotifier;
+let scheduler;
+
+try {
+    if (ReviewAnalyzer) {
+        console.log('🔧 初始化評價分析器...');
+        reviewAnalyzer = new ReviewAnalyzer();
+    }
+    
+    if (TelegramNotifier) {
+        console.log('📱 初始化Telegram通知器...');
+        telegramNotifier = new TelegramNotifier();
+    }
+    
+    if (AutoScheduler && reviewAnalyzer && telegramNotifier) {
+        console.log('⏰ 初始化自動排程器...');
+        scheduler = new AutoScheduler(reviewAnalyzer, telegramNotifier);
+    }
+    
+    console.log('✅ 服務初始化完成');
+    
+} catch (error) {
+    console.error('❌ 服務初始化錯誤:', error.message);
+    console.log('🔄 使用簡化啟動模式');
+}
 
 // 主頁路由
 app.get('/', (req, res) => {
@@ -49,6 +95,28 @@ app.post('/api/analyze-stores', async (req, res) => {
         if (!stores || !Array.isArray(stores) || stores.length === 0) {
             return res.status(400).json({
                 error: '請提供有效的分店數據'
+            });
+        }
+
+        // 檢查reviewAnalyzer是否可用
+        if (!reviewAnalyzer) {
+            console.log('⚠️ 分析器未初始化，使用簡化回應');
+            return res.json({
+                error: '系統正在初始化中，請稍後再試',
+                summary: {
+                    totalStores: stores.length,
+                    averageRating: 0,
+                    totalPlatforms: 0,
+                    totalReviews: 0,
+                    analysisTime: new Date().toISOString()
+                },
+                stores: stores.map(store => ({
+                    id: store.id,
+                    name: store.name,
+                    averageRating: 0,
+                    platforms: {},
+                    insights: null
+                }))
             });
         }
 
