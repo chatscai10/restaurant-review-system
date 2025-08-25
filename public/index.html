@@ -380,9 +380,27 @@
                 <button type="button" class="btn btn-analyze me-3" onclick="analyzeAllStores()">
                     <i class="fas fa-chart-line me-2"></i>開始分析評價
                 </button>
-                <button type="button" class="btn btn-telegram" onclick="sendTelegramNotification()" id="telegramBtn" disabled>
+                <button type="button" class="btn btn-telegram me-3" onclick="sendTelegramNotification()" id="telegramBtn" disabled>
                     <i class="fab fa-telegram me-2"></i>發送Telegram通知
                 </button>
+                <button type="button" class="btn btn-outline-success me-3" onclick="openScheduler()">
+                    <i class="fas fa-clock me-2"></i>自動通知設定
+                </button>
+            </div>
+
+            <!-- 排程狀態顯示 -->
+            <div id="scheduleStatusWidget" class="alert alert-info text-center" style="display: none;">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <i class="fas fa-clock me-2"></i>
+                        <span id="scheduleStatusText">排程功能已啟用</span>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="openScheduler()">
+                            <i class="fas fa-cog me-1"></i>管理排程
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- 通知狀態顯示 -->
@@ -1141,6 +1159,41 @@
             showNotification(message, type);
         }
 
+        // ==================== 排程功能 ====================
+        
+        // 開啟排程設定頁面
+        function openScheduler() {
+            // 在新視窗開啟排程設定頁面
+            window.open('scheduler.html', '_blank');
+        }
+        
+        // 檢查排程狀態
+        async function checkScheduleStatus() {
+            try {
+                const response = await fetch('/api/schedule/status');
+                if (response.ok) {
+                    const status = await response.json();
+                    updateScheduleWidget(status);
+                }
+            } catch (error) {
+                console.log('無法載入排程狀態:', error.message);
+            }
+        }
+        
+        // 更新排程狀態小工具
+        function updateScheduleWidget(status) {
+            const widget = document.getElementById('scheduleStatusWidget');
+            const statusText = document.getElementById('scheduleStatusText');
+            
+            if (status.hasActiveSchedules) {
+                widget.style.display = 'block';
+                widget.className = 'alert alert-success text-center';
+                statusText.textContent = `自動通知已啟用 (${status.activeCount} 個排程運行中)`;
+            } else {
+                widget.style.display = 'none';
+            }
+        }
+
         // ==================== 頁面載入時的初始化 ====================
         
         // 頁面載入完成後執行
@@ -1168,6 +1221,9 @@
                     console.error('載入 Telegram 配置失敗:', e);
                 }
             }
+            
+            // 檢查排程狀態
+            checkScheduleStatus();
         });
     </script>
 </body>
