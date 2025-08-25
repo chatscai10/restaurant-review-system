@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 系統版本檢查頁面</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        .success { color: green; } .error { color: red; } .warning { color: orange; }
+        .code { background: #f5f5f5; padding: 10px; border-radius: 5px; font-family: monospace; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 餐廳評價系統 - 版本檢查頁面</h1>
+        
+        <div id="status">檢查中...</div>
+        
+        <h3>📊 系統狀態</h3>
+        <div id="systemInfo"></div>
+        
+        <h3>🧠 功能檢查</h3>
+        <div id="featureCheck"></div>
+        
+        <h3>🔧 快速修復</h3>
+        <button onclick="clearCacheAndReload()">🔄 清除緩存並刷新</button>
+        <button onclick="forceReload()">⚡ 強制重新載入</button>
+        <button onclick="checkAPI()">📡 測試API</button>
+        <button onclick="goToMain()">🏠 返回主頁</button>
+        
+        <div id="apiResult"></div>
+        
+        <h3>📱 如果仍看到舊版本</h3>
+        <ol>
+            <li>按 <strong>Ctrl+Shift+Delete</strong> (Chrome) 或 <strong>Ctrl+Shift+R</strong> (Firefox)</li>
+            <li>清除 "緩存圖像和文件"</li>
+            <li>重新載入此頁面</li>
+            <li>如果仍有問題，請嘗試無痕模式</li>
+        </ol>
+    </div>
+
+    <script>
+        // 檢查系統狀態
+        function checkSystemStatus() {
+            const now = new Date();
+            document.getElementById('status').innerHTML = `
+                <div class="success">✅ 檢查頁面已載入</div>
+                <div>🕐 當前時間: ${now.toLocaleString('zh-TW')}</div>
+                <div>🌐 當前URL: ${window.location.href}</div>
+            `;
+            
+            // 檢查系統信息
+            document.getElementById('systemInfo').innerHTML = `
+                <div>📱 用戶代理: ${navigator.userAgent.substring(0, 100)}...</div>
+                <div>🔧 瀏覽器: ${navigator.appName} ${navigator.appVersion.substring(0, 50)}...</div>
+            `;
+            
+            // 檢查功能
+            checkFeatures();
+        }
+        
+        function checkFeatures() {
+            const features = {
+                '記憶報告': document.body.innerHTML.includes('記憶報告'),
+                'ratingChangeIndicator': document.body.innerHTML.includes('ratingChangeIndicator'), 
+                '查看詳情': document.body.innerHTML.includes('查看詳情'),
+                '自動通知設定': document.body.innerHTML.includes('自動通知設定')
+            };
+            
+            let html = '';
+            for (const [feature, exists] of Object.entries(features)) {
+                html += `<div class="${exists ? 'success' : 'error'}">
+                    ${exists ? '✅' : '❌'} ${feature}: ${exists ? '已找到' : '未找到'}
+                </div>`;
+            }
+            
+            document.getElementById('featureCheck').innerHTML = html;
+        }
+        
+        async function checkAPI() {
+            document.getElementById('apiResult').innerHTML = '<div>📡 測試API中...</div>';
+            
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        stores: [{
+                            id: 1,
+                            name: '測試分店',
+                            urls: {
+                                google: 'https://maps.app.goo.gl/fS8RAzxJpBjVpSQT9',
+                                uber: 'https://www.ubereats.com/store-browse-uuid/dcbd639d-d703-5c60-a55e-7ddb1a6954f9',
+                                panda: 'https://foodpanda.page.link/yhvLQKDDAScTN5rq7'
+                            }
+                        }]
+                    })
+                });
+                
+                const data = await response.json();
+                
+                let html = `<div class="success">✅ API測試成功</div>`;
+                html += `<div>📊 平均評分: ${data.summary?.averageRating}</div>`;
+                html += `<div>🧠 記憶功能: ${data.memory ? '✅ 已啟用' : '❌ 未啟用'}</div>`;
+                html += `<div class="code">API回應: ${JSON.stringify(data, null, 2).substring(0, 500)}...</div>`;
+                
+                document.getElementById('apiResult').innerHTML = html;
+            } catch (error) {
+                document.getElementById('apiResult').innerHTML = `
+                    <div class="error">❌ API測試失敗: ${error.message}</div>
+                `;
+            }
+        }
+        
+        function clearCacheAndReload() {
+            // 清除localStorage
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // 添加時間戳強制刷新
+            const url = new URL(window.location);
+            url.searchParams.set('v', Date.now());
+            window.location.href = url.toString();
+        }
+        
+        function forceReload() {
+            window.location.reload(true);
+        }
+        
+        function goToMain() {
+            window.location.href = '/';
+        }
+        
+        // 頁面載入時執行檢查
+        window.onload = checkSystemStatus;
+    </script>
+</body>
+</html>
