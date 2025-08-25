@@ -35,8 +35,8 @@ app.get('/health', (req, res) => {
     });
 });
 
-// 基本API路由 - 分析分店評價 (簡化版)
-app.post('/api/analyze', async (req, res) => {
+// 分析函數 - 共用邏輯
+async function performStoreAnalysis(req, res) {
     try {
         const { stores } = req.body;
         
@@ -117,7 +117,13 @@ app.post('/api/analyze', async (req, res) => {
             timestamp: new Date().toISOString()
         });
     }
-});
+}
+
+// 基本API路由 - 分析分店評價 (簡化版)
+app.post('/api/analyze', performStoreAnalysis);
+
+// 支援舊版API端點
+app.post('/api/analyze-stores', performStoreAnalysis);
 
 // Telegram通知功能
 async function sendRailwayTestNotification(results) {
