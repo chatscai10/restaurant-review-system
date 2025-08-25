@@ -302,6 +302,127 @@ app.patch('/api/schedule/:id/toggle', (req, res) => {
     });
 });
 
+// 獲取執行記錄
+app.get('/api/schedule/logs', (req, res) => {
+    const { limit = 50, offset = 0 } = req.query;
+    
+    // 模擬執行記錄數據
+    const logs = [];
+    const now = new Date();
+    
+    for (let i = 0; i < Math.min(limit, 20); i++) {
+        const logTime = new Date(now.getTime() - i * 60 * 60 * 1000); // 每小時一個記錄
+        logs.push({
+            id: i + 1,
+            timestamp: logTime.toISOString(),
+            scheduleId: 1,
+            scheduleName: '每日自動查詢',
+            status: i % 5 === 0 ? 'failed' : 'success',
+            executionTime: Math.floor(Math.random() * 5000) + 1000, // 1-6秒
+            storesAnalyzed: 1,
+            averageRating: (4.5 + Math.random() * 0.4).toFixed(1),
+            details: {
+                platforms: {
+                    google: { rating: 4.6, success: true },
+                    uber: { rating: 4.8, success: true },
+                    panda: { rating: 4.7, success: i % 5 !== 0 }
+                },
+                memoryComparison: i > 0 ? {
+                    hasComparison: true,
+                    ratingChange: (Math.random() - 0.5) * 0.4
+                } : null,
+                telegramSent: i % 5 !== 0
+            },
+            error: i % 5 === 0 ? 'Foodpanda平台連接超時' : null
+        });
+    }
+    
+    res.json({
+        success: true,
+        data: {
+            logs,
+            pagination: {
+                total: 100,
+                limit: parseInt(limit),
+                offset: parseInt(offset),
+                hasMore: offset + limit < 100
+            }
+        },
+        timestamp: new Date().toISOString()
+    });
+});
+
+// 清除執行記錄
+app.delete('/api/schedule/logs', (req, res) => {
+    res.json({
+        success: true,
+        message: '執行記錄已清除',
+        clearedCount: 50,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// 獲取特定執行記錄詳情
+app.get('/api/schedule/logs/:logId', (req, res) => {
+    const { logId } = req.params;
+    
+    const logDetail = {
+        id: logId,
+        timestamp: new Date().toISOString(),
+        scheduleId: 1,
+        scheduleName: '每日自動查詢',
+        status: 'success',
+        executionTime: 3240,
+        storesAnalyzed: 1,
+        averageRating: 4.7,
+        details: {
+            platforms: {
+                google: { 
+                    rating: 4.6, 
+                    reviewCount: '1,183',
+                    success: true,
+                    responseTime: 1200,
+                    url: 'https://maps.app.goo.gl/fS8RAzxJpBjVpSQT9'
+                },
+                uber: { 
+                    rating: 4.8, 
+                    reviewCount: '600+',
+                    success: true,
+                    responseTime: 980,
+                    url: 'https://www.ubereats.com/store-browse-uuid/dcbd639d-d703-5c60-a55e-7ddb1a6954f9'
+                },
+                panda: { 
+                    rating: 4.7, 
+                    reviewCount: '500+',
+                    success: true,
+                    responseTime: 1560,
+                    url: 'https://foodpanda.page.link/yhvLQKDDAScTN5rq7'
+                }
+            },
+            memoryComparison: {
+                hasComparison: true,
+                previousRating: 4.6,
+                currentRating: 4.7,
+                ratingChange: 0.1,
+                trend: 'increasing'
+            },
+            telegramSent: true,
+            telegramChatIds: ['-1002658082392'],
+            systemInfo: {
+                version: '2.0.0',
+                memorySystemActive: true,
+                environment: 'Railway Cloud'
+            }
+        }
+    };
+    
+    res.json({
+        success: true,
+        data: logDetail,
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Telegram測試通知函數
 function sendRailwayTestNotification(results) {
     if (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_IDS) {
