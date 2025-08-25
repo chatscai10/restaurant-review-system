@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 3003;
 console.log('🚀 Railway簡化伺服器啟動中...');
 console.log(`📍 環境: NODE_ENV=${process.env.NODE_ENV}`);
 console.log(`🔧 Port: ${PORT}`);
+console.log('🔄 版本: API端點修復版本 - 支援analyze-stores');
 
 // 基本中間件
 app.use(cors());
