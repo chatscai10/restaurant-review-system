@@ -1170,5 +1170,59 @@
             }
         });
     </script>
-</body>
+
+    <script>
+    console.log('🔧 使用修復版本 - API端點已改為 /api/analyze');
+    
+    // 覆蓋原始的analyzeAllStores函數
+    window.originalAnalyzeAllStores = window.analyzeAllStores;
+    
+    window.analyzeAllStores = async function() {
+        console.log('🚀 使用修復版API端點: /api/analyze');
+        
+        const stores = collectStoreData();
+        
+        if (stores.length === 0) {
+            alert('請至少填寫一個分店的名稱和網址');
+            return;
+        }
+
+        // 顯示載入中
+        document.getElementById('loadingSpinner').style.display = 'block';
+        document.getElementById('resultsContainer').style.display = 'none';
+
+        try {
+            console.log('📡 發送請求到 /api/analyze');
+            
+            const response = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ stores })
+            });
+
+            console.log('📨 收到回應狀態:', response.status);
+            
+            const results = await response.json();
+            
+            console.log('📊 分析結果:', results);
+            
+            if (response.ok) {
+                currentResults = results;
+                displayResults(results);
+                document.getElementById('telegramBtn').disabled = false;
+                console.log('✅ 分析成功完成');
+            } else {
+                throw new Error(results.error || '分析失敗');
+            }
+        } catch (error) {
+            console.error('❌ 分析錯誤:', error);
+            alert('分析過程中發生錯誤：' + error.message);
+        } finally {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+    };
+    </script>
+    \n</body>
 </html>
