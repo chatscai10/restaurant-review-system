@@ -31,7 +31,7 @@ class CloudCrawler {
 
             return {
                 name: storeName,
-                rating: '4.2', // 模擬平均評分
+                rating: 4.2, // 修正為數字格式
                 reviewCount: '200+',
                 address: '地址資訊需要完整版本查詢',
                 phone: '電話資訊需要完整版本查詢',
@@ -63,7 +63,7 @@ class CloudCrawler {
 
             return {
                 name: storeName,
-                rating: '4.3',
+                rating: 4.3, // 修正為數字格式
                 reviewCount: '150+',
                 deliveryTime: '25-40分鐘',
                 deliveryFee: '30元',
@@ -87,7 +87,7 @@ class CloudCrawler {
             // 基本店家信息
             return {
                 name: 'Foodpanda店家',
-                rating: '4.1',
+                rating: 4.1, // 修正為數字格式
                 reviewCount: '100+',
                 deliveryTime: '30-45分鐘',
                 deliveryFee: '25元',
