@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const https = require('https');
+const { MemorySystem } = require('./memory-system');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -10,6 +11,12 @@ console.log('🚀 Railway簡化伺服器啟動中...');
 console.log(`📍 環境: NODE_ENV=${process.env.NODE_ENV}`);
 console.log(`🔧 Port: ${PORT}`);
 console.log('🔄 版本: API端點修復版本 - 支援analyze-stores');
+
+// 初始化記憶系統
+const memorySystem = new MemorySystem();
+memorySystem.init().then(() => {
+    console.log('🧠 記憶系統已啟動');
+});
 
 // 基本中間件
 app.use(cors());
@@ -113,7 +120,40 @@ async function performStoreAnalysis(req, res) {
             }))
         };
 
-        console.log(`✅ Railway分析完成 - 平均評分: 4.5⭐`);
+        console.log(`✅ Railway分析完成 - 平均評分: ${Math.round(correctAverageRating * 10) / 10}⭐`);
+        
+        // 🧠 記憶系統處理
+        let memoryComparison = null;
+        try {
+            // 比較昨日數據
+            memoryComparison = await memorySystem.compareWithYesterday(results);
+            
+            // 保存今日數據
+            await memorySystem.saveToday(results);
+            
+            // 添加記憶信息到結果
+            results.memory = {
+                comparison: memoryComparison,
+                report: memorySystem.generateMemoryReport(memoryComparison)
+            };
+            
+            // 為每個分店添加評分變化標示
+            if (memoryComparison && memoryComparison.hasComparison) {
+                results.stores = results.stores.map(store => {
+                    const storeComparison = memoryComparison.stores.find(s => s.storeName === store.name);
+                    if (storeComparison && storeComparison.rating.difference !== null) {
+                        store.ratingChangeIndicator = memorySystem.getRatingChangeIndicator(storeComparison.rating.difference);
+                        store.yesterdayRating = storeComparison.rating.yesterday;
+                    }
+                    return store;
+                });
+            }
+            
+            console.log('🧠 記憶系統處理完成');
+            
+        } catch (memoryError) {
+            console.error('⚠️ 記憶系統錯誤:', memoryError.message);
+        }
         
         // 如果設定了Telegram，發送測試通知
         if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_IDS) {
