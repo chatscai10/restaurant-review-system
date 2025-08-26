@@ -423,14 +423,24 @@ app.get('/api/schedule/logs/:logId', (req, res) => {
     });
 });
 
-// Telegram測試通知函數
+// Telegram測試通知函數 - 支援多群組和簡化格式
 function sendRailwayTestNotification(results) {
-    if (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_IDS) {
-        console.log('⚠️ Telegram配置未設定，跳過通知');
+    // 定義群組配置
+    const TELEGRAM_GROUPS = {
+        admin: '-1002658082392',    // 管理員群組（接收所有測試功能回應）
+        boss: '-4739541077',       // 老闆群組（業務通知）
+        employee: '-4757083844'    // 員工群組（簡化通知）
+    };
+    
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7659930552:AAF_jF1rAXFnjFO176-9X5fKfBwbrko8BNc';
+    
+    if (!BOT_TOKEN) {
+        console.log('⚠️ Telegram Bot Token未設定，跳過通知');
         return;
     }
 
-    const message = `🚀 Railway v2.0 測試通知
+    // 管理員和老闆群組的完整通知
+    const fullMessage = `🚀 Railway v2.0 測試通知
 
 ✅ 部署成功確認：
 • 🧠 記憶系統: ${results.memory ? '已啟用' : '未啟用'}
@@ -440,34 +450,56 @@ function sendRailwayTestNotification(results) {
 
 🆕 v2.0 新功能全部載入完成！`;
 
-    const chatIds = process.env.TELEGRAM_CHAT_IDS.split(',');
+    // 員工群組的簡化通知
+    const employeeMessage = `🍰 分店評分更新
+
+🏦 不早脆皮雞排 中壢龍崗店
+⭐ 平均評分: ${results.summary.averageRating}/5.0
+
+📱 Google Maps 4.6⭐ (1,183 評論)
+🔗 https://maps.app.goo.gl/fS8RAzxJpBjVpSQT9
+
+🚗 UberEats 4.8⭐ (600+ 評論)
+🔗 https://www.ubereats.com/store-browse-uuid/dcbd639d-d703-5c60-a55e-7ddb1a6954f9
+
+🍽️ Foodpanda 4.7⭐ (500+ 評論)
+🔗 https://foodpanda.page.link/yhvLQKDDAScTN5rq7`;
     
-    chatIds.forEach(chatId => {
-        const payload = JSON.stringify({
-            chat_id: chatId.trim(),
-            text: message
-        });
-
-        const req = https.request({
-            hostname: 'api.telegram.org',
-            port: 443,
-            path: `/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(payload)
-            }
-        }, (res) => {
-            console.log(`📱 Telegram通知發送狀態: ${res.statusCode}`);
-        });
-
-        req.on('error', (error) => {
-            console.error('❌ Telegram通知失敗:', error.message);
-        });
-
-        req.write(payload);
-        req.end();
+    // 發送給管理員和老闆群組（完整版）
+    [TELEGRAM_GROUPS.admin, TELEGRAM_GROUPS.boss].forEach(chatId => {
+        sendTelegramMessage(BOT_TOKEN, chatId, fullMessage);
     });
+    
+    // 發送給員工群組（簡化版）
+    sendTelegramMessage(BOT_TOKEN, TELEGRAM_GROUPS.employee, employeeMessage);
+}
+
+// 發送單一Telegram訊息的輔助函數
+function sendTelegramMessage(botToken, chatId, message) {
+    const payload = JSON.stringify({
+        chat_id: chatId,
+        text: message
+    });
+
+    const req = https.request({
+        hostname: 'api.telegram.org',
+        port: 443,
+        path: `/bot${botToken}/sendMessage`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(payload)
+        }
+    }, (res) => {
+        console.log(`📱 Telegram通知發送到 ${chatId}: ${res.statusCode}`);
+    });
+
+    req.on('error', (error) => {
+        console.error(`❌ Telegram通知失敗 ${chatId}:`, error.message);
+    });
+
+    req.write(payload);
+    req.end();
 }
 
 // 啟動伺服器

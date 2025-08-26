@@ -182,19 +182,35 @@ class FixedCloudScheduler {
     }
     
     /**
-     * 發送Telegram報告
+     * 發送Telegram報告 - 支援多群組和簡化格式
      */
     async sendTelegramReport() {
         try {
-            const report = this.generateReport();
-            this.log(`📱 發送Telegram報告到 ${this.config.telegramChatIds.length} 個群組`);
+            // 定義群組配置
+            const TELEGRAM_GROUPS = {
+                admin: '-1002658082392',    // 管理員群組（接收所有功能回應）
+                boss: '-4739541077',       // 老闆群組（完整業務通知）
+                employee: '-4757083844'    // 員工群組（簡化通知）
+            };
             
-            for (const chatId of this.config.telegramChatIds) {
-                await this.sendTelegramMessage(chatId, report);
-                await this.sleep(1000); // 避免頻率限制
-            }
+            this.log(`📱 發送多群組Telegram報告`);
             
-            this.log('✅ Telegram報告發送完成');
+            // 完整報告（管理員和老闆）
+            const fullReport = this.generateReport();
+            
+            // 簡化報告（員工群組）
+            const employeeReport = this.generateEmployeeReport();
+            
+            // 發送完整報告給管理員和老闆
+            await this.sendTelegramMessage(TELEGRAM_GROUPS.admin, fullReport);
+            await this.sleep(1000);
+            await this.sendTelegramMessage(TELEGRAM_GROUPS.boss, fullReport);
+            await this.sleep(1000);
+            
+            // 發送簡化報告給員工
+            await this.sendTelegramMessage(TELEGRAM_GROUPS.employee, employeeReport);
+            
+            this.log('✅ 多群組Telegram報告發送完成');
             
         } catch (error) {
             this.log(`❌ Telegram報告發送失敗: ${error.message}`);
@@ -263,6 +279,45 @@ class FixedCloudScheduler {
             }
         });
         return total;
+    }
+    
+    /**
+     * 生成員工群組簡化報告
+     */
+    generateEmployeeReport() {
+        const stores = this.results.stores || [];
+        
+        let report = `🍰 分店評分更新\n━━━━━━━━━━━━━━━━━━━━━━\n`;
+
+        stores.forEach(store => {
+            const platforms = store.platforms || {};
+            const avgRating = store.averageRating || 0;
+            
+            report += `🏦 ${store.name}\n⭐ 平均評分: ${avgRating.toFixed(1)}/5.0\n\n`;
+
+            // 只顯示分店名稱、平台分數、評論數、網址
+            Object.entries(platforms).forEach(([platform, data]) => {
+                const platformName = this.getSimplePlatformName(platform);
+                if (data.success && data.rating) {
+                    const urlText = data.url && data.url !== '#' ? `\n🔗 ${data.url}\n` : '';
+                    report += `${platformName} ${data.rating}⭐ (${data.reviewCount || 'N/A'} 評論)${urlText}\n`;
+                }
+            });
+        });
+        
+        return report;
+    }
+
+    /**
+     * 獲取簡化平台名稱（員工群組用）
+     */
+    getSimplePlatformName(platform) {
+        const names = {
+            google: '📱',
+            uber: '🚗', 
+            panda: '🍽️'
+        };
+        return names[platform] || platform;
     }
     
     /**

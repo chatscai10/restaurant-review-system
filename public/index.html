@@ -1236,21 +1236,38 @@
             };
 
             try {
-                // 填入預設數據到第一個分店表單
-                const firstStoreCard = document.querySelector('.store-card');
-                if (firstStoreCard) {
-                    const nameInput = firstStoreCard.querySelector('input[name="storeName"]');
-                    const googleInput = firstStoreCard.querySelector('input[name="googleUrl"]');
-                    const uberInput = firstStoreCard.querySelector('input[name="uberUrl"]');
-                    const pandaInput = firstStoreCard.querySelector('input[name="pandaUrl"]');
-
-                    if (nameInput) nameInput.value = defaultStoreData.name;
-                    if (googleInput) googleInput.value = defaultStoreData.urls.google;
-                    if (uberInput) uberInput.value = defaultStoreData.urls.uber;
-                    if (pandaInput) pandaInput.value = defaultStoreData.urls.panda;
+                // 直接創建預設分店（確保顯示）
+                console.log('🏪 強制創建預設分店表單');
+                
+                // 清空現有的分店容器
+                const container = document.getElementById('storeFormsContainer');
+                if (container) {
+                    container.innerHTML = '';
+                    storeCount = 0; // 重置計數器
                 }
+                
+                // 直接調用 addStore() 然後填入數據
+                addStore();
+                
+                // 等待DOM更新後填入數據
+                setTimeout(() => {
+                    const firstStoreCard = document.querySelector('.store-card');
+                    if (firstStoreCard) {
+                        const nameInput = firstStoreCard.querySelector('input[name="storeName"]');
+                        const googleInput = firstStoreCard.querySelector('input[name="googleUrl"]');
+                        const uberInput = firstStoreCard.querySelector('input[name="uberUrl"]');
+                        const pandaInput = firstStoreCard.querySelector('input[name="pandaUrl"]');
 
-                console.log('✅ 預設分店數據載入完成');
+                        if (nameInput) nameInput.value = defaultStoreData.name;
+                        if (googleInput) googleInput.value = defaultStoreData.urls.google;
+                        if (uberInput) uberInput.value = defaultStoreData.urls.uber;
+                        if (pandaInput) pandaInput.value = defaultStoreData.urls.panda;
+
+                        console.log('✅ 預設分店數據載入完成');
+                    } else {
+                        console.error('❌ 無法找到創建的分店表單');
+                    }
+                }, 200);
                 
             } catch (error) {
                 console.error('載入預設分店數據失敗:', error);
@@ -1262,16 +1279,17 @@
             console.log('🔄 載入預設Telegram群組配置');
             
             try {
-                // 填入預設Telegram群組
-                const groupNameInput = document.querySelector('#groupName_1');
-                const groupIdInput = document.querySelector('#groupId_1');
-                const groupEnabledInput = document.querySelector('#groupEnabled_1');
-
-                if (groupNameInput) groupNameInput.value = '主要群組';
-                if (groupIdInput) groupIdInput.value = '-1002658082392';
-                if (groupEnabledInput) groupEnabledInput.checked = true;
-
-                console.log('✅ 預設Telegram群組配置載入完成');
+                // 預設群組配置 (管理員、老闆、員工)
+                const defaultGroups = [
+                    { name: '主要群組', chatId: '-1002658082392', enabled: true },
+                    { name: '老闆群組', chatId: '-4739541077', enabled: true },
+                    { name: '員工群組', chatId: '-4757083844', enabled: true }
+                ];
+                
+                // 設置到Telegram群組表單
+                setTelegramGroups(defaultGroups);
+                
+                console.log('✅ 預設Telegram群組配置載入完成（包含員工群組）');
                 
             } catch (error) {
                 console.error('載入預設Telegram配置失敗:', error);
@@ -1296,12 +1314,14 @@
                 } catch (e) {
                     console.error('讀取保存數據失敗:', e);
                     // 如果載入失敗，使用預設數據
-                    loadDefaultStoreData();
+                    setTimeout(() => loadDefaultStoreData(), 100);
                 }
             } else {
                 // 沒有保存數據時，載入預設數據
-                loadDefaultStoreData();
+                setTimeout(() => loadDefaultStoreData(), 100);
             }
+            
+            console.log('🌐 頁面載入完成，開始初始化數據');
             
             // 自動載入 Telegram 群組配置
             const savedTelegramConfig = localStorage.getItem('telegramGroupConfig');
