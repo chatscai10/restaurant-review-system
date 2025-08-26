@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>排程設定 - 修復版</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37); padding: 2rem; margin: 2rem auto; max-width: 900px; }
+        .btn-primary { background: linear-gradient(45deg, #667eea, #764ba2); border: none; }
+        .alert { border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="mb-4">🛠️ 排程設定 - 修復版</h2>
+        
+        <div id="notification" class="alert" style="display: none;"></div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h4>📅 基本設定</h4>
+                <div class="mb-3">
+                    <label class="form-label">排程名稱</label>
+                    <input type="text" id="scheduleName" class="form-control" value="每日自動查詢">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">執行時間</label>
+                    <input type="time" id="scheduleTime" class="form-control" value="09:00">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">頻率</label>
+                    <div>
+                        <input type="radio" name="frequency" value="daily" id="daily" checked>
+                        <label for="daily">每日</label>
+                        <input type="radio" name="frequency" value="hourly" id="hourly" class="ms-3">
+                        <label for="hourly">每小時</label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <input type="checkbox" id="notifySuccess" checked>
+                    <label for="notifySuccess">執行成功通知</label>
+                    <br>
+                    <input type="checkbox" id="notifyError" checked>
+                    <label for="notifyError">執行失敗通知</label>
+                </div>
+                
+                <button class="btn btn-primary me-2" onclick="saveSchedule()">
+                    <i class="fas fa-save"></i> 儲存設定
+                </button>
+                <button class="btn btn-success me-2" onclick="testSchedule()">
+                    <i class="fas fa-play"></i> 立即測試
+                </button>
+                <button class="btn btn-info" onclick="loadLogs()">
+                    <i class="fas fa-refresh"></i> 重新載入記錄
+                </button>
+            </div>
+            
+            <div class="col-md-6">
+                <h4>📊 執行記錄</h4>
+                <div id="executionLogs" style="max-height: 400px; overflow-y: auto;">
+                    載入中...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 顯示通知
+        function showNotification(type, message) {
+            const notification = document.getElementById('notification');
+            notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'}`;
+            notification.textContent = message;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+        
+        // 儲存排程設定 - 修復版
+        async function saveSchedule() {
+            try {
+                const frequencyElement = document.querySelector('input[name="frequency"]:checked');
+                if (!frequencyElement) {
+                    showNotification('error', '請選擇頻率');
+                    return;
+                }
+                
+                const scheduleData = {
+                    name: document.getElementById('scheduleName').value || '預設排程',
+                    frequency: frequencyElement.value,
+                    time: document.getElementById('scheduleTime').value || '09:00',
+                    notifySuccess: document.getElementById('notifySuccess').checked,
+                    notifyError: document.getElementById('notifyError').checked,
+                    createdAt: new Date().toISOString()
+                };
+                
+                console.log('保存排程數據:', scheduleData);
+                showNotification('info', '正在保存設定...');
+                
+                const response = await fetch('/api/schedule/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(scheduleData)
+                });
+                
+                const result = await response.json();
+                console.log('API回應:', result);
+                
+                if (response.ok && result.success) {
+                    showNotification('success', '排程設定保存成功！');
+                    loadLogs(); // 重新載入記錄
+                } else {
+                    throw new Error(result.message || result.error || '保存失敗');
+                }
+            } catch (error) {
+                console.error('保存錯誤:', error);
+                showNotification('error', '保存失敗: ' + error.message);
+            }
+        }
+        
+        // 測試執行 - 修復版
+        async function testSchedule() {
+            try {
+                showNotification('info', '正在執行測試...');
+                
+                const response = await fetch('/api/schedule/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                console.log('測試結果:', result);
+                
+                if (response.ok && result.success) {
+                    showNotification('success', `測試成功！平均評分: ${result.result?.averageRating || 'N/A'}⭐`);
+                    loadLogs(); // 重新載入記錄
+                } else {
+                    throw new Error(result.message || result.error || '測試失敗');
+                }
+            } catch (error) {
+                console.error('測試錯誤:', error);
+                showNotification('error', '測試失敗: ' + error.message);
+            }
+        }
+        
+        // 載入執行記錄 - 修復版
+        async function loadLogs() {
+            try {
+                const logsContainer = document.getElementById('executionLogs');
+                logsContainer.innerHTML = '<p class="text-muted">載入中...</p>';
+                
+                const response = await fetch('/api/schedule/logs');
+                const apiData = await response.json();
+                console.log('API記錄回應:', apiData);
+                
+                if (!response.ok) {
+                    throw new Error('載入失敗');
+                }
+                
+                // 修復：正確解析API回應結構
+                const logs = apiData.success && apiData.data && apiData.data.logs ? apiData.data.logs : [];
+                console.log('解析到的記錄:', logs);
+                
+                if (logs.length === 0) {
+                    logsContainer.innerHTML = '<p class="text-muted">暫無執行記錄</p>';
+                    return;
+                }
+                
+                let html = '';
+                logs.forEach((log, index) => {
+                    // 修復：使用正確的狀態判斷
+                    const isSuccess = log.status === 'success';
+                    const statusClass = isSuccess ? 'success' : 'danger';
+                    const statusIcon = isSuccess ? 'check-circle' : 'times-circle';
+                    
+                    html += `
+                        <div class="alert alert-${statusClass} alert-sm mb-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <i class="fas fa-${statusIcon} me-2"></i>
+                                    <strong>${log.scheduleName || '未命名排程'}</strong>
+                                    <br>
+                                    <small>${new Date(log.timestamp).toLocaleString('zh-TW')}</small>
+                                    ${log.averageRating ? `<br><small>平均評分: ${log.averageRating}⭐</small>` : ''}
+                                </div>
+                                <div class="text-end">
+                                    <small>${isSuccess ? '✅ 成功' : '❌ 失敗'}</small>
+                                    ${log.executionTime ? `<br><small>${log.executionTime}ms</small>` : ''}
+                                </div>
+                            </div>
+                            ${log.error ? `<div class="mt-2"><small class="text-danger">錯誤: ${log.error}</small></div>` : ''}
+                        </div>
+                    `;
+                });
+                
+                logsContainer.innerHTML = html;
+                showNotification('success', `載入了 ${logs.length} 筆記錄`);
+                
+            } catch (error) {
+                console.error('載入記錄錯誤:', error);
+                document.getElementById('executionLogs').innerHTML = 
+                    `<div class="alert alert-danger">載入失敗: ${error.message}</div>`;
+                showNotification('error', '載入記錄失敗: ' + error.message);
+            }
+        }
+        
+        // 頁面載入時自動載入記錄
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('修復版排程頁面已載入');
+            loadLogs();
+        });
+    </script>
+</body>
+</html>
