@@ -357,22 +357,31 @@
 
         // 儲存排程設定
         async function saveSchedule() {
-            const scheduleData = {
-                name: document.getElementById('scheduleName').value,
-                priority: document.getElementById('schedulePriority').value,
-                frequency: document.querySelector('input[name="frequency"]:checked').value,
-                time: document.getElementById('scheduleTime').value,
-                weekday: document.getElementById('scheduleWeekday').value,
-                interval: document.getElementById('scheduleInterval').value,
-                notifySuccess: document.getElementById('notifySuccess').checked,
-                notifyError: document.getElementById('notifyError').checked,
-                notifyChanges: document.getElementById('notifyChanges').checked,
-                allStores: document.getElementById('allStores').checked,
-                specificStores: document.getElementById('specificStores').checked,
-                createdAt: new Date().toISOString()
-            };
-
             try {
+                // 修復：添加表單驗證和錯誤處理
+                const frequencyElement = document.querySelector('input[name="frequency"]:checked');
+                if (!frequencyElement) {
+                    showNotification('error', '請選擇排程頻率');
+                    return;
+                }
+
+                const scheduleData = {
+                    name: document.getElementById('scheduleName')?.value || '預設排程',
+                    priority: document.getElementById('schedulePriority')?.value || 'medium',
+                    frequency: frequencyElement.value,
+                    time: document.getElementById('scheduleTime')?.value || '09:00',
+                    weekday: document.getElementById('scheduleWeekday')?.value || '1',
+                    interval: document.getElementById('scheduleInterval')?.value || '1',
+                    notifySuccess: document.getElementById('notifySuccess')?.checked || true,
+                    notifyError: document.getElementById('notifyError')?.checked || true,
+                    notifyChanges: document.getElementById('notifyChanges')?.checked || false,
+                    allStores: document.getElementById('allStores')?.checked || true,
+                    specificStores: document.getElementById('specificStores')?.checked || false,
+                    createdAt: new Date().toISOString()
+                };
+
+                console.log('保存排程數據:', scheduleData);
+
                 const response = await fetch('/api/schedule/save', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -444,7 +453,10 @@
         async function loadExecutionLogs() {
             try {
                 const response = await fetch('/api/schedule/logs');
-                const logs = await response.json();
+                const data = await response.json();
+                
+                // 修復：正確解析API回應結構
+                const logs = data.success && data.data && data.data.logs ? data.data.logs : [];
                 
                 const logsContainer = document.getElementById('executionLogs');
                 
@@ -455,8 +467,10 @@
 
                 let logsHtml = '';
                 logs.forEach(log => {
-                    const statusClass = log.success ? 'text-success' : 'text-danger';
-                    const statusIcon = log.success ? 'fa-check-circle' : 'fa-exclamation-circle';
+                    // 修復：正確判斷狀態 (API返回的是status字段，不是success)
+                    const isSuccess = log.status === 'success';
+                    const statusClass = isSuccess ? 'text-success' : 'text-danger';
+                    const statusIcon = isSuccess ? 'fa-check-circle' : 'fa-exclamation-circle';
                     
                     logsHtml += `
                         <div class="time-slot">
@@ -470,11 +484,11 @@
                                     </span>
                                 </div>
                                 <div class="col-md-3 text-end">
-                                    <small class="${statusClass}">${log.success ? '執行成功' : '執行失敗'}</small>
+                                    <small class="${statusClass}">${isSuccess ? '執行成功' : '執行失敗'}</small>
                                 </div>
                             </div>
                             ${log.error ? `<div class="mt-2"><small class="text-danger">錯誤：${log.error}</small></div>` : ''}
-                            ${log.result ? `<div class="mt-2"><small class="text-info">結果：平均評分 ${log.result.averageRating}⭐</small></div>` : ''}
+                            ${log.averageRating ? `<div class="mt-2"><small class="text-info">結果：平均評分 ${log.averageRating}⭐</small></div>` : ''}
                         </div>
                     `;
                 });
