@@ -287,25 +287,46 @@ class FixedCloudScheduler {
     generateEmployeeReport() {
         const stores = this.results.stores || [];
         
-        let report = `🍰 分店評分更新\n━━━━━━━━━━━━━━━━━━━━━━\n`;
+        let report = `🟢 ＊ 每日平台評分自動更新
+🟢 ＊ 獎金以每月5號的更新訊息為計算
+━━━━━━━━━━━━━━━━━━━━━━
+
+`;
 
         stores.forEach(store => {
             const platforms = store.platforms || {};
             const avgRating = store.averageRating || 0;
             
-            report += `🏦 ${store.name}\n⭐ 平均評分: ${avgRating.toFixed(1)}/5.0\n\n`;
+            report += `🟢 ${store.name}
+⭐ 平均評分: ${avgRating.toFixed(1)}/5.0
 
-            // 只顯示分店名稱、平台分數、評論數、網址
+`;
+
+            // 顯示各平台評分和網址
             Object.entries(platforms).forEach(([platform, data]) => {
-                const platformName = this.getSimplePlatformName(platform);
                 if (data.success && data.rating) {
-                    const urlText = data.url && data.url !== '#' ? `\n🔗 ${data.url}\n` : '';
-                    report += `${platformName} ${data.rating}⭐ (${data.reviewCount || 'N/A'} 評論)${urlText}\n`;
+                    const platformName = this.getEmployeePlatformName(platform);
+                    report += `🟢 ${platformName} ${data.rating}⭐ (${data.reviewCount || 'N/A'} 評論)
+🟢 ${data.url && data.url !== '#' ? data.url : ''}
+
+`;
                 }
             });
         });
         
         return report;
+    }
+
+    /**
+     * 獲取員工群組平台名稱（使用🟢格式）
+     */
+    getEmployeePlatformName(platform) {
+        const names = {
+            google: 'Google Maps',
+            uber: 'UberEats', 
+            panda: 'Foodpanda'
+        };
+        return names[platform] || platform;
     }
 
     /**
