@@ -46,32 +46,32 @@ class FixedCloudScheduler {
     }
     
     /**
-     * 解析查詢配置 - 包含所有三個分店
+     * 解析查詢配置 - 包含修正後的網址
      */
     parseQueryConfig() {
         return [
             {
                 name: '不早脆皮雞排 中壢龍崗店',
                 urls: {
-                    google: 'https://maps.app.goo.gl/fS8RAzxJpBjVpSQT9',
-                    uber: 'https://www.ubereats.com/store-browse-uuid/dcbd639d-d703-5c60-a55e-7ddb1a6954f9',
-                    panda: 'https://foodpanda.page.link/yhvLQKDDAScTN5rq7'
+                    google: 'https://www.google.com/maps?q=320%E6%A1%83%E5%9C%92%E5%B8%82%E4%B8%AD%E5%A3%A2%E5%8D%80%E9%BE%8D%E6%9D%B1%E8%B7%AF190%E8%99%9F%E6%AD%A3%E5%B0%8D%E9%9D%A2%E4%B8%8D%E6%97%A9%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E4%B8%AD%E5%A3%A2%E9%BE%8D%E5%B4%97%E5%BA%97&ftid=0x34682372b798b33f:0xfb7f2e66227d173',
+                    uber: 'https://www.ubereats.com/store/%E4%B8%8D%E6%97%A9%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E4%B8%AD%E5%A3%A2%E9%BE%8D%E5%B4%97%E5%BA%97/3L1jndcDXGClXn3bGmlU-Q',
+                    panda: 'https://www.foodpanda.com.tw/restaurant/la6k/bu-zao-cui-pi-ji-pai-zhong-li-long-gang-dian'
                 }
             },
             {
                 name: '不早脆皮雞排 桃園龍安店',
                 urls: {
-                    google: 'https://share.google/b3kRCFMEbXw5FKJ9R',
-                    uber: 'https://www.ubereats.com/store/%E4%B8%8D%E6%97%A9%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92%E6%A1%83%E5%9C%92%E9%BE%8D%E5%AE%89%E5%BA%97/mY4hchI6VIKrKBjJYEGGmA?diningMode=DELIVERY',
+                    google: 'https://www.google.com/search?kgmid=/g/11krbr1qv3&q=%E4%B8%8D%E6%97%A9%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E6%A1%83%E5%9C%92%E9%BE%8D%E5%AE%89%E5%BA%97',
+                    uber: 'https://www.ubereats.com/store/%E4%B8%8D%E6%97%A9%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92%E6%A1%83%E5%9C%92%E9%BE%8D%E5%AE%89%E5%BA%97/mY4hchI6VIKrKBjJYEGGmA',
                     panda: 'https://www.foodpanda.com.tw/restaurant/darg/bu-zao-cui-pi-ji-pai-tao-yuan-long-an-dian'
                 }
             },
             {
                 name: '脆皮雞排 內壢忠孝店',
                 urls: {
-                    google: 'https://share.google/XGWZjqS9cWbWbUyJj',
-                    uber: 'https://www.ubereats.com/store/%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E5%85%A7%E5%A3%A2%E5%BF%A0%E5%AD%9D%E5%BA%97/cA165PUVSmqs2nduXGfscw?diningMode=DELIVERY',
-                    panda: 'https://foodpanda.page.link/VJ5ZTHtmiDpi3apq6'
+                    google: 'https://maps.google.com/maps?q=%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E5%85%A7%E5%A3%A2%E5%BF%A0%E5%AD%9D%E5%BA%97',
+                    uber: 'https://www.ubereats.com/store/%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E5%85%A7%E5%A3%A2%E5%BF%A0%E5%AD%9D%E5%BA%97/cA165PUVSmqs2nduXGfscw',
+                    panda: 'https://www.foodpanda.com.tw/restaurant/la6k/bu-zao-cui-pi-ji-pai-zhong-li-long-gang-dian'
                 }
             }
         ];

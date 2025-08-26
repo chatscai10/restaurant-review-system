@@ -54,7 +54,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// 分店特定數據回退函數
+// 分店特定數據回退函數 - 基於實際測試的修正數據
 function getStoreSpecificRating(storeName, platform) {
     const storeData = {
         '不早脆皮雞排 中壢龍崗店': {
