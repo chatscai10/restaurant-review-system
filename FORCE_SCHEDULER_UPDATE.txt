@@ -1,0 +1,4 @@
+URGENT: Force scheduler.html deployment
+Timestamp: 2025-08-25T19:45:00Z
+Reason: JavaScript errors still persist in deployed version
+User waiting for fix
