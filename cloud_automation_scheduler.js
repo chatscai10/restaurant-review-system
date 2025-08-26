@@ -229,7 +229,9 @@ class FixedCloudScheduler {
             Object.entries(platforms).forEach(([platform, data]) => {
                 const platformName = this.getPlatformName(platform);
                 if (data.success && data.rating) {
-                    report += `🟢 ${platformName} ${data.rating}⭐ (${data.reviewCount || 'N/A'} 評論)
+                    // 添加平台URL連結
+                    const urlText = data.url && data.url !== '#' ? `\n🔗 ${data.url}` : '';
+                    report += `🟢 ${platformName} ${data.rating}⭐ (${data.reviewCount || 'N/A'} 評論)${urlText}
 `;
                 } else {
                     report += `🟡 ${platformName} N/A (查詢失敗)
