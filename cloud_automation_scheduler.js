@@ -46,7 +46,7 @@ class FixedCloudScheduler {
     }
     
     /**
-     * 解析查詢配置 - 使用固定的測試數據
+     * 解析查詢配置 - 包含所有三個分店
      */
     parseQueryConfig() {
         return [
@@ -56,6 +56,22 @@ class FixedCloudScheduler {
                     google: 'https://maps.app.goo.gl/fS8RAzxJpBjVpSQT9',
                     uber: 'https://www.ubereats.com/store-browse-uuid/dcbd639d-d703-5c60-a55e-7ddb1a6954f9',
                     panda: 'https://foodpanda.page.link/yhvLQKDDAScTN5rq7'
+                }
+            },
+            {
+                name: '不早脆皮雞排 桃園龍安店',
+                urls: {
+                    google: 'https://share.google/b3kRCFMEbXw5FKJ9R',
+                    uber: 'https://www.ubereats.com/store/%E4%B8%8D%E6%97%A9%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92%E6%A1%83%E5%9C%92%E9%BE%8D%E5%AE%89%E5%BA%97/mY4hchI6VIKrKBjJYEGGmA?diningMode=DELIVERY',
+                    panda: 'https://www.foodpanda.com.tw/restaurant/darg/bu-zao-cui-pi-ji-pai-tao-yuan-long-an-dian'
+                }
+            },
+            {
+                name: '脆皮雞排 內壢忠孝店',
+                urls: {
+                    google: 'https://share.google/XGWZjqS9cWbWbUyJj',
+                    uber: 'https://www.ubereats.com/store/%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E5%85%A7%E5%A3%A2%E5%BF%A0%E5%AD%9D%E5%BA%97/cA165PUVSmqs2nduXGfscw?diningMode=DELIVERY',
+                    panda: 'https://foodpanda.page.link/VJ5ZTHtmiDpi3apq6'
                 }
             }
         ];

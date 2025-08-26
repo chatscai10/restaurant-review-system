@@ -1221,24 +1221,39 @@
 
         // ==================== 預設數據載入功能 ====================
 
-        // 載入預設分店數據
+        // 載入預設分店數據 - 包含所有三個分店
         function loadDefaultStoreData() {
-            console.log('🔄 載入預設分店數據');
+            console.log('🔄 載入三個預設分店數據');
             
-            // 預設分店數據（與自動通知系統同步）
-            const defaultStoreData = {
-                name: '不早脆皮雞排 中壢龍崗店',
-                urls: {
-                    google: 'https://maps.app.goo.gl/fS8RAzxJpBjVpSQT9',
-                    uber: 'https://www.ubereats.com/store-browse-uuid/dcbd639d-d703-5c60-a55e-7ddb1a6954f9',
-                    panda: 'https://foodpanda.page.link/yhvLQKDDAScTN5rq7'
+            // 三個預設分店數據（與自動通知系統同步）
+            const defaultStores = [
+                {
+                    name: '不早脆皮雞排 中壢龍崗店',
+                    urls: {
+                        google: 'https://maps.app.goo.gl/fS8RAzxJpBjVpSQT9',
+                        uber: 'https://www.ubereats.com/store-browse-uuid/dcbd639d-d703-5c60-a55e-7ddb1a6954f9',
+                        panda: 'https://foodpanda.page.link/yhvLQKDDAScTN5rq7'
+                    }
+                },
+                {
+                    name: '不早脆皮雞排 桃園龍安店',
+                    urls: {
+                        google: 'https://share.google/b3kRCFMEbXw5FKJ9R',
+                        uber: 'https://www.ubereats.com/store/%E4%B8%8D%E6%97%A9%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92%E6%A1%83%E5%9C%92%E9%BE%8D%E5%AE%89%E5%BA%97/mY4hchI6VIKrKBjJYEGGmA?diningMode=DELIVERY',
+                        panda: 'https://www.foodpanda.com.tw/restaurant/darg/bu-zao-cui-pi-ji-pai-tao-yuan-long-an-dian'
+                    }
+                },
+                {
+                    name: '脆皮雞排 內壢忠孝店',
+                    urls: {
+                        google: 'https://share.google/XGWZjqS9cWbWbUyJj',
+                        uber: 'https://www.ubereats.com/store/%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E5%85%A7%E5%A3%A2%E5%BF%A0%E5%AD%9D%E5%BA%97/cA165PUVSmqs2nduXGfscw?diningMode=DELIVERY',
+                        panda: 'https://foodpanda.page.link/VJ5ZTHtmiDpi3apq6'
+                    }
                 }
-            };
+            ];
 
             try {
-                // 直接創建預設分店（確保顯示）
-                console.log('🏪 強制創建預設分店表單');
-                
                 // 清空現有的分店容器
                 const container = document.getElementById('storeFormsContainer');
                 if (container) {
@@ -1246,28 +1261,36 @@
                     storeCount = 0; // 重置計數器
                 }
                 
-                // 直接調用 addStore() 然後填入數據
-                addStore();
+                console.log('🏪 創建三個預設分店表單');
                 
-                // 等待DOM更新後填入數據
+                // 為每個分店創建表單
+                defaultStores.forEach((storeData, index) => {
+                    addStore(); // 創建分店表單
+                    
+                    // 等待DOM更新後填入數據
+                    setTimeout(() => {
+                        const storeCards = document.querySelectorAll('.store-card');
+                        const currentCard = storeCards[index];
+                        
+                        if (currentCard) {
+                            const nameInput = currentCard.querySelector('input[name="storeName"]');
+                            const googleInput = currentCard.querySelector('input[name="googleUrl"]');
+                            const uberInput = currentCard.querySelector('input[name="uberUrl"]');
+                            const pandaInput = currentCard.querySelector('input[name="pandaUrl"]');
+
+                            if (nameInput) nameInput.value = storeData.name;
+                            if (googleInput) googleInput.value = storeData.urls.google;
+                            if (uberInput) uberInput.value = storeData.urls.uber;
+                            if (pandaInput) pandaInput.value = storeData.urls.panda;
+
+                            console.log(`✅ 分店 ${index + 1} 數據載入完成: ${storeData.name}`);
+                        }
+                    }, 300 + (index * 100)); // 錯開載入時間
+                });
+                
                 setTimeout(() => {
-                    const firstStoreCard = document.querySelector('.store-card');
-                    if (firstStoreCard) {
-                        const nameInput = firstStoreCard.querySelector('input[name="storeName"]');
-                        const googleInput = firstStoreCard.querySelector('input[name="googleUrl"]');
-                        const uberInput = firstStoreCard.querySelector('input[name="uberUrl"]');
-                        const pandaInput = firstStoreCard.querySelector('input[name="pandaUrl"]');
-
-                        if (nameInput) nameInput.value = defaultStoreData.name;
-                        if (googleInput) googleInput.value = defaultStoreData.urls.google;
-                        if (uberInput) uberInput.value = defaultStoreData.urls.uber;
-                        if (pandaInput) pandaInput.value = defaultStoreData.urls.panda;
-
-                        console.log('✅ 預設分店數據載入完成');
-                    } else {
-                        console.error('❌ 無法找到創建的分店表單');
-                    }
-                }, 200);
+                    console.log('✅ 所有三個預設分店數據載入完成');
+                }, 800);
                 
             } catch (error) {
                 console.error('載入預設分店數據失敗:', error);
