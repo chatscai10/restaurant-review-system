@@ -313,9 +313,9 @@ class FixedCloudScheduler {
      */
     getSimplePlatformName(platform) {
         const names = {
-            google: '📱',
-            uber: '🚗', 
-            panda: '🍽️'
+            google: '📱 Google Maps',
+            uber: '🚗 UberEats', 
+            panda: '🍽️ Foodpanda'
         };
         return names[platform] || platform;
     }
