@@ -1219,6 +1219,65 @@
             }
         }
 
+        // ==================== 預設數據載入功能 ====================
+
+        // 載入預設分店數據
+        function loadDefaultStoreData() {
+            console.log('🔄 載入預設分店數據');
+            
+            // 預設分店數據（與自動通知系統同步）
+            const defaultStoreData = {
+                name: '不早脆皮雞排 中壢龍崗店',
+                urls: {
+                    google: 'https://maps.app.goo.gl/fS8RAzxJpBjVpSQT9',
+                    uber: 'https://www.ubereats.com/store-browse-uuid/dcbd639d-d703-5c60-a55e-7ddb1a6954f9',
+                    panda: 'https://foodpanda.page.link/yhvLQKDDAScTN5rq7'
+                }
+            };
+
+            try {
+                // 填入預設數據到第一個分店表單
+                const firstStoreCard = document.querySelector('.store-card');
+                if (firstStoreCard) {
+                    const nameInput = firstStoreCard.querySelector('input[name="storeName"]');
+                    const googleInput = firstStoreCard.querySelector('input[name="googleUrl"]');
+                    const uberInput = firstStoreCard.querySelector('input[name="uberUrl"]');
+                    const pandaInput = firstStoreCard.querySelector('input[name="pandaUrl"]');
+
+                    if (nameInput) nameInput.value = defaultStoreData.name;
+                    if (googleInput) googleInput.value = defaultStoreData.urls.google;
+                    if (uberInput) uberInput.value = defaultStoreData.urls.uber;
+                    if (pandaInput) pandaInput.value = defaultStoreData.urls.panda;
+                }
+
+                console.log('✅ 預設分店數據載入完成');
+                
+            } catch (error) {
+                console.error('載入預設分店數據失敗:', error);
+            }
+        }
+
+        // 載入預設Telegram群組配置
+        function loadDefaultTelegramConfig() {
+            console.log('🔄 載入預設Telegram群組配置');
+            
+            try {
+                // 填入預設Telegram群組
+                const groupNameInput = document.querySelector('#groupName_1');
+                const groupIdInput = document.querySelector('#groupId_1');
+                const groupEnabledInput = document.querySelector('#groupEnabled_1');
+
+                if (groupNameInput) groupNameInput.value = '主要群組';
+                if (groupIdInput) groupIdInput.value = '-1002658082392';
+                if (groupEnabledInput) groupEnabledInput.checked = true;
+
+                console.log('✅ 預設Telegram群組配置載入完成');
+                
+            } catch (error) {
+                console.error('載入預設Telegram配置失敗:', error);
+            }
+        }
+
         // ==================== 頁面載入時的初始化 ====================
         
         // 頁面載入完成後執行
@@ -1230,9 +1289,18 @@
                     const data = JSON.parse(savedData);
                     document.getElementById('lastSaveTime').textContent = 
                         new Date(data.timestamp).toLocaleString('zh-TW');
+                    
+                    // 自動載入保存的數據到表單
+                    restoreInputData(data);
+                    console.log('✅ 自動載入保存的分店數據');
                 } catch (e) {
-                    console.error('讀取保存時間失敗:', e);
+                    console.error('讀取保存數據失敗:', e);
+                    // 如果載入失敗，使用預設數據
+                    loadDefaultStoreData();
                 }
+            } else {
+                // 沒有保存數據時，載入預設數據
+                loadDefaultStoreData();
             }
             
             // 自動載入 Telegram 群組配置
@@ -1245,6 +1313,9 @@
                 } catch (e) {
                     console.error('載入 Telegram 配置失敗:', e);
                 }
+            } else {
+                // 載入預設Telegram群組
+                loadDefaultTelegramConfig();
             }
             
             // 檢查排程狀態
