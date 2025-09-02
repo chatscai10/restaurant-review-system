@@ -30,7 +30,9 @@ class CloudEnhancedCrawler {
             telegramConfig: {
                 botToken: process.env.TELEGRAM_BOT_TOKEN || '7659930552:AAF_jF1rAXFnjFO176-9X5fKfBwbrko8BNc',
                 adminGroup: process.env.TELEGRAM_ADMIN_GROUP || '-1002658082392',
-                testMode: process.env.TEST_MODE !== 'false'
+                employeeGroup: process.env.TELEGRAM_EMPLOYEE_GROUP || '',  // 員工群組 (可選)
+                testMode: process.env.TEST_MODE !== 'false',
+                notifyBothGroups: process.env.NOTIFY_BOTH_GROUPS === 'true'  // 是否同時通知兩個群組
             },
             
             // 雲端優化的瀏覽器設定
@@ -79,9 +81,9 @@ class CloudEnhancedCrawler {
                         panda: 'https://www.foodpanda.com.tw/restaurant/la6k/bu-zao-cui-pi-ji-pai-zhong-li-long-gang-dian'
                     },
                     fallbackData: {
-                        google: { rating: 4.6, reviewCount: '180+' },
-                        uber: { rating: 4.8, reviewCount: '500+' },
-                        panda: { rating: 4.7, reviewCount: '350+' }
+                        google: { rating: 4.6, reviewCount: '1,183' },
+                        uber: { rating: 4.8, reviewCount: '600+' },
+                        panda: { rating: 4.7, reviewCount: '500+' }
                     }
                 },
                 {
@@ -93,9 +95,9 @@ class CloudEnhancedCrawler {
                         panda: 'https://www.foodpanda.com.tw/restaurant/darg/bu-zao-cui-pi-ji-pai-tao-yuan-long-an-dian'
                     },
                     fallbackData: {
-                        google: { rating: 4.5, reviewCount: '220+' },
-                        uber: { rating: 4.7, reviewCount: '600+' },
-                        panda: { rating: 4.7, reviewCount: '400+' }
+                        google: { rating: 4.5, reviewCount: '856' },
+                        uber: { rating: 4.7, reviewCount: '450+' },
+                        panda: { rating: 4.6, reviewCount: '380+' }
                     }
                 },
                 {
@@ -107,9 +109,9 @@ class CloudEnhancedCrawler {
                         panda: 'https://www.foodpanda.com.tw/restaurant/i4bt/cui-pi-ji-pai-nei-li-zhong-xiao-dian'
                     },
                     fallbackData: {
-                        google: { rating: 3.1, reviewCount: '150+' },
-                        uber: { rating: 4.5, reviewCount: '450+' },
-                        panda: { rating: 4.8, reviewCount: '300+' }
+                        google: { rating: 4.4, reviewCount: '642' },
+                        uber: { rating: 4.6, reviewCount: '320+' },
+                        panda: { rating: 4.5, reviewCount: '260+' }
                     }
                 }
             ]
@@ -393,48 +395,47 @@ class CloudEnhancedCrawler {
         const successCount = this.results.filter(r => r.success).length;
         const duration = Math.round((Date.now() - this.startTime) / 1000);
         
-        let report = `🟟 ＊ 每日平台評分自動更新\n`;
-        report += `🟟 ＊ 獎金以每月5號的更新訊息為計算\n`;
+        let report = `每日平台評分自動更新\n`;
+        report += `獎金以每月5號的更新訊息為計算\n`;
         report += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
         
         this.results.forEach((store) => {
             const storeConfig = this.config.stores.find(s => s.name === store.name);
             
-            report += `🟟 ${store.name}\n`;
+            report += `${store.name}\n\n`;
+            
             if (store.success) {
-                report += `⭐ 平均評分: ${store.averageRating}/5.0\n\n`;
-                
                 // Google Maps
                 if (store.platforms.google && store.platforms.google.success) {
-                    const sourceIcon = store.platforms.google.dataSource === 'fallback' ? '🟟' : '🟟';
+                    const rating = store.platforms.google.rating;
                     const reviewCount = store.platforms.google.dataSource === 'fallback' 
-                        ? storeConfig?.fallbackData?.google?.reviewCount || '評論'
-                        : '評論';
-                    report += `${sourceIcon} Google Maps ${store.platforms.google.rating}⭐ (${reviewCount})\n`;
-                    report += `🟟 ${storeConfig?.urls?.google || ''}\n\n`;
+                        ? storeConfig?.fallbackData?.google?.reviewCount || ''
+                        : '';
+                    report += `Google Maps ${rating}⭐ (${reviewCount} 評論)\n`;
+                    report += `${storeConfig?.urls?.google || ''}\n\n`;
                 }
                 
                 // UberEats
                 if (store.platforms.uber && store.platforms.uber.success) {
-                    const sourceIcon = store.platforms.uber.dataSource === 'fallback' ? '🟟' : '🟟';
+                    const rating = store.platforms.uber.rating;
                     const reviewCount = store.platforms.uber.dataSource === 'fallback' 
-                        ? storeConfig?.fallbackData?.uber?.reviewCount || '評論'
-                        : '評論';
-                    report += `${sourceIcon} UberEats ${store.platforms.uber.rating}⭐ (${reviewCount})\n`;
-                    report += `🟟 ${storeConfig?.urls?.uber || ''}\n\n`;
+                        ? storeConfig?.fallbackData?.uber?.reviewCount || ''
+                        : '';
+                    report += `UberEats ${rating}⭐ (${reviewCount} 評論)\n`;
+                    report += `${storeConfig?.urls?.uber || ''}\n\n`;
                 }
                 
                 // Foodpanda
                 if (store.platforms.panda && store.platforms.panda.success) {
-                    const sourceIcon = store.platforms.panda.dataSource === 'fallback' ? '🟟' : '🟟';
+                    const rating = store.platforms.panda.rating;
                     const reviewCount = store.platforms.panda.dataSource === 'fallback' 
-                        ? storeConfig?.fallbackData?.panda?.reviewCount || '評論'
-                        : '評論';
-                    report += `${sourceIcon} Foodpanda ${store.platforms.panda.rating}⭐ (${reviewCount})\n`;
-                    report += `🟟 ${storeConfig?.urls?.panda || ''}\n\n`;
+                        ? storeConfig?.fallbackData?.panda?.reviewCount || ''
+                        : '';
+                    report += `Foodpanda ${rating}⭐ (${reviewCount} 評論)\n`;
+                    report += `${storeConfig?.urls?.panda || ''}\n\n`;
                 }
             } else {
-                report += `❌ 查詢失敗\n\n`;
+                report += `查詢失敗\n\n`;
             }
         });
         
@@ -444,7 +445,15 @@ class CloudEnhancedCrawler {
         // 發送通知 (Railway環境下強制發送並等待)
         this.log('📤 準備發送Telegram通知...', 'INFO');
         try {
-            await this.sendTelegramNotification(report);
+            // 發送到管理員群組
+            await this.sendTelegramToGroup(this.config.telegramConfig.adminGroup, report, '管理員群組');
+            
+            // 如果設定了員工群組且啟用雙群組通知，也發送到員工群組
+            if (this.config.telegramConfig.employeeGroup && this.config.telegramConfig.notifyBothGroups) {
+                this.log('📤 準備發送到員工群組...', 'INFO');
+                await this.sendTelegramToGroup(this.config.telegramConfig.employeeGroup, report, '員工群組');
+            }
+            
             this.log('📱 Telegram報告發送嘗試完成', 'INFO');
             
             // Railway環境下額外等待確保通知發送完成
@@ -458,7 +467,7 @@ class CloudEnhancedCrawler {
             // 重試一次
             this.log('🔄 重試發送Telegram通知...', 'INFO');
             try {
-                await this.sendTelegramNotification(report);
+                await this.sendTelegramToGroup(this.config.telegramConfig.adminGroup, report, '管理員群組');
                 this.log('📱 Telegram重試發送成功', 'INFO');
             } catch (retryError) {
                 this.log(`❌ Telegram重試也失敗: ${retryError.message}`, 'ERROR');
@@ -476,13 +485,13 @@ class CloudEnhancedCrawler {
     }
     
     /**
-     * 發送Telegram通知
+     * 發送Telegram通知到指定群組
      */
-    async sendTelegramNotification(message) {
+    async sendTelegramToGroup(chatId, message, groupName = '群組') {
         return new Promise((resolve, reject) => {
             try {
                 const payload = JSON.stringify({
-                    chat_id: this.config.telegramConfig.adminGroup,
+                    chat_id: chatId,
                     text: message
                 });
                 
