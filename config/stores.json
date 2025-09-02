@@ -1,0 +1,12 @@
+[
+  {
+    "id": "test_store_1",
+    "name": "測試分店",
+    "urls": {
+      "google": "https://maps.app.goo.gl/fS8RAzxJpBjVpSQT9",
+      "uber": "https://www.ubereats.com/store-browse-uuid/dcbd639d-d703-5c60-a55e-7ddb1a6954f9",
+      "panda": "https://foodpanda.page.link/yhvLQKDDAScTN5rq7"
+    },
+    "enabled": true
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "test_group_1",
+    "name": "測試群組1",
+    "chatId": "-1002658082392",
+    "enabled": true
+  },
+  {
+    "id": "test_group_2",
+    "name": "測試群組2",
+    "chatId": "-1234567890",
+    "enabled": false
+  }
+]

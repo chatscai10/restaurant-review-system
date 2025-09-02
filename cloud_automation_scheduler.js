@@ -71,7 +71,7 @@ class FixedCloudScheduler {
                 urls: {
                     google: 'https://maps.google.com/maps?q=%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E5%85%A7%E5%A3%A2%E5%BF%A0%E5%AD%9D%E5%BA%97',
                     uber: 'https://www.ubereats.com/store/%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E5%85%A7%E5%A3%A2%E5%BF%A0%E5%AD%9D%E5%BA%97/cA165PUVSmqs2nduXGfscw',
-                    panda: 'https://www.foodpanda.com.tw/restaurant/la6k/bu-zao-cui-pi-ji-pai-zhong-li-long-gang-dian'
+                    panda: 'https://www.foodpanda.com.tw/restaurant/i4bt/cui-pi-ji-pai-nei-li-zhong-xiao-dian'
                 }
             }
         ];
@@ -88,34 +88,89 @@ class FixedCloudScheduler {
     }
     
     /**
-     * 執行自動查詢 - 使用Railway API
+     * 執行自動查詢 - 使用Railway API (改為分開執行)
      */
     async executeScheduledQuery() {
         const startTime = new Date();
         this.log(`⏰ 開始執行定時查詢 - ${startTime.toISOString()}`);
         
         try {
-            // 準備API請求數據
-            const storesData = this.config.queryConfig.map((store, index) => ({
-                id: index + 1,
-                name: store.name,
-                urls: store.urls
-            }));
+            // 初始化結果
+            this.results = {
+                stores: [],
+                summary: {
+                    totalStores: 0,
+                    averageRating: 0
+                }
+            };
             
-            this.log(`🔍 調用Railway API分析 ${storesData.length} 個分店`);
+            // 分開執行每個分店查詢
+            for (const [index, store] of this.config.queryConfig.entries()) {
+                this.log(`\n🔍 正在查詢第 ${index + 1}/${this.config.queryConfig.length} 個分店: ${store.name}`);
+                
+                try {
+                    // 準備單個分店的API請求數據
+                    const singleStoreData = [{
+                        id: 1,
+                        name: store.name,
+                        urls: store.urls
+                    }];
+                    
+                    // 調用Railway API - 單個分店
+                    const apiResponse = await this.callRailwayAPI(singleStoreData);
+                    
+                    if (apiResponse && apiResponse.stores && apiResponse.stores.length > 0) {
+                        // 添加到結果中
+                        this.results.stores.push(apiResponse.stores[0]);
+                        this.log(`✅ ${store.name} 查詢成功，評分: ${apiResponse.stores[0].averageRating}`);
+                    } else {
+                        this.log(`⚠️ ${store.name} 查詢無數據`);
+                        // 添加失敗記錄
+                        this.results.stores.push({
+                            name: store.name,
+                            averageRating: 0,
+                            platforms: {},
+                            error: '查詢無數據'
+                        });
+                    }
+                    
+                    // 延遲2秒再查詢下一個，避免過快請求
+                    if (index < this.config.queryConfig.length - 1) {
+                        this.log(`⏳ 等待2秒後查詢下一個分店...`);
+                        await this.sleep(2000);
+                    }
+                    
+                } catch (storeError) {
+                    this.log(`❌ ${store.name} 查詢失敗: ${storeError.message}`);
+                    // 添加錯誤記錄
+                    this.results.stores.push({
+                        name: store.name,
+                        averageRating: 0,
+                        platforms: {},
+                        error: storeError.message
+                    });
+                }
+            }
             
-            // 調用Railway API
-            const apiResponse = await this.callRailwayAPI(storesData);
-            
-            if (apiResponse && apiResponse.stores) {
-                this.results = apiResponse;
-                this.log(`✅ API調用成功，獲得 ${apiResponse.stores.length} 個分店數據`);
+            // 計算總體統計
+            if (this.results.stores.length > 0) {
+                const validStores = this.results.stores.filter(s => !s.error && s.averageRating > 0);
+                this.results.summary.totalStores = this.results.stores.length;
+                
+                if (validStores.length > 0) {
+                    const totalRating = validStores.reduce((sum, store) => sum + store.averageRating, 0);
+                    this.results.summary.averageRating = totalRating / validStores.length;
+                }
+                
+                this.log(`\n📊 查詢完成統計:`);
+                this.log(`✅ 成功: ${validStores.length} 個分店`);
+                this.log(`❌ 失敗: ${this.results.stores.length - validStores.length} 個分店`);
+                this.log(`⭐ 整體平均評分: ${this.results.summary.averageRating.toFixed(1)}`);
                 
                 // 發送Telegram通知
                 await this.sendTelegramReport();
-                
             } else {
-                throw new Error('API回應格式錯誤或無數據');
+                throw new Error('所有分店查詢都失敗');
             }
             
         } catch (error) {
@@ -125,7 +180,7 @@ class FixedCloudScheduler {
         
         const endTime = new Date();
         const duration = Math.round((endTime - startTime) / 1000);
-        this.log(`🏁 查詢完成，耗時 ${duration} 秒`);
+        this.log(`🏁 查詢完成，總耗時 ${duration} 秒`);
         
         // 保存執行日誌
         await this.saveExecutionLog();
@@ -198,35 +253,51 @@ class FixedCloudScheduler {
     }
     
     /**
-     * 發送Telegram報告 - 支援多群組和簡化格式
+     * 發送Telegram報告 - 測試階段僅發送管理員群組
      */
     async sendTelegramReport() {
         try {
             // 定義群組配置
             const TELEGRAM_GROUPS = {
-                admin: '-1002658082392',    // 管理員群組（接收所有功能回應）
-                boss: '-4739541077',       // 老闆群組（完整業務通知）
-                employee: '-4757083844'    // 員工群組（簡化通知）
+                admin: '-1002658082392',    // 管理員群組（接收所有測試功能回應）
+                boss: '-4739541077',       // 老闆群組（測試穩定後啟用）
+                employee: '-4757083844'    // 員工群組（測試穩定後啟用）
             };
             
-            this.log(`📱 發送多群組Telegram報告`);
+            // 測試模式標記
+            const testMode = true; // 設為false以啟用所有群組通知
             
-            // 完整報告（管理員和老闆）
-            const fullReport = this.generateReport();
-            
-            // 簡化報告（員工群組）
-            const employeeReport = this.generateEmployeeReport();
-            
-            // 發送完整報告給管理員和老闆
-            await this.sendTelegramMessage(TELEGRAM_GROUPS.admin, fullReport);
-            await this.sleep(1000);
-            await this.sendTelegramMessage(TELEGRAM_GROUPS.boss, fullReport);
-            await this.sleep(1000);
-            
-            // 發送簡化報告給員工
-            await this.sendTelegramMessage(TELEGRAM_GROUPS.employee, employeeReport);
-            
-            this.log('✅ 多群組Telegram報告發送完成');
+            if (testMode) {
+                this.log(`📱 [測試模式] 僅發送管理員群組Telegram報告`);
+                
+                // 生成測試報告（包含更多調試信息）
+                const testReport = this.generateTestReport();
+                
+                // 僅發送給管理員群組
+                await this.sendTelegramMessage(TELEGRAM_GROUPS.admin, testReport);
+                
+                this.log('✅ [測試模式] 管理員群組報告發送完成');
+                
+            } else {
+                this.log(`📱 發送多群組Telegram報告`);
+                
+                // 完整報告（管理員和老闆）
+                const fullReport = this.generateReport();
+                
+                // 簡化報告（員工群組）
+                const employeeReport = this.generateEmployeeReport();
+                
+                // 發送完整報告給管理員和老闆
+                await this.sendTelegramMessage(TELEGRAM_GROUPS.admin, fullReport);
+                await this.sleep(1000);
+                await this.sendTelegramMessage(TELEGRAM_GROUPS.boss, fullReport);
+                await this.sleep(1000);
+                
+                // 發送簡化報告給員工
+                await this.sendTelegramMessage(TELEGRAM_GROUPS.employee, employeeReport);
+                
+                this.log('✅ 多群組Telegram報告發送完成');
+            }
             
         } catch (error) {
             this.log(`❌ Telegram報告發送失敗: ${error.message}`);
@@ -322,7 +393,8 @@ class FixedCloudScheduler {
             Object.entries(platforms).forEach(([platform, data]) => {
                 if (data.success && data.rating) {
                     const platformName = this.getEmployeePlatformName(platform);
-                    report += `🟢 ${platformName} ${data.rating}⭐ (${data.reviewCount || 'N/A'} 評論)
+                    const dataSource = data.source === 'Fallback Data' ? ' ⚠️ [假數據]' : '';
+                    report += `🟢 ${platformName} ${data.rating}⭐ (${data.reviewCount || 'N/A'} 評論)${dataSource}
 🟢 ${data.url && data.url !== '#' ? data.url : ''}
 
 `;
@@ -457,6 +529,66 @@ class FixedCloudScheduler {
         } catch (error) {
             this.log(`❌ 保存日誌失敗: ${error.message}`);
         }
+    }
+    
+    /**
+     * 生成測試報告（包含更多調試信息）
+     */
+    generateTestReport() {
+        const summary = this.results.summary || {};
+        const stores = this.results.stores || [];
+        const timestamp = new Date().toLocaleString('zh-TW');
+        
+        let report = `🧪 [測試模式] 分開執行查詢報告\n`;
+        report += `━━━━━━━━━━━━━━━━━━━━━━\n`;
+        report += `⏰ 執行時間: ${timestamp}\n`;
+        report += `🔧 執行模式: 分開查詢（每個分店獨立）\n`;
+        report += `🟢 查詢店家: ${stores.length} 家\n\n`;
+        
+        // 詳細的分店資訊
+        stores.forEach((store, index) => {
+            const platforms = store.platforms || {};
+            const avgRating = store.averageRating || 0;
+            
+            report += `【${index + 1}】${store.name}\n`;
+            
+            if (store.error) {
+                report += `❌ 查詢失敗: ${store.error}\n\n`;
+            } else {
+                report += `⭐ 平均評分: ${avgRating.toFixed(1)}/5.0\n`;
+                report += `✅ 成功平台: ${Object.keys(platforms).length}/3\n`;
+                report += `📊 總評論數: ${this.getTotalReviews(platforms)}\n\n`;
+                
+                // 各平台詳情
+                Object.entries(platforms).forEach(([platform, data]) => {
+                    const platformName = this.getPlatformName(platform);
+                    if (data.success && data.rating) {
+                        report += `  ✓ ${platformName}: ${data.rating}⭐ (${data.reviewCount || 'N/A'} 評論)\n`;
+                    } else {
+                        report += `  ✗ ${platformName}: 查詢失敗\n`;
+                    }
+                });
+                report += `\n`;
+            }
+        });
+        
+        // 統計信息
+        const successCount = stores.filter(s => !s.error).length;
+        const failCount = stores.filter(s => s.error).length;
+        
+        report += `📊 查詢統計:\n`;
+        report += `• 成功: ${successCount}/${stores.length} 個分店\n`;
+        report += `• 失敗: ${failCount}/${stores.length} 個分店\n`;
+        report += `• 整體平均: ${(summary.averageRating || 0).toFixed(1)}⭐\n\n`;
+        
+        report += `💡 測試說明:\n`;
+        report += `• 採用分開查詢模式提高穩定性\n`;
+        report += `• 每個分店間隔2秒查詢\n`;
+        report += `• 測試穩定後將啟用所有群組通知\n\n`;
+        
+        report += `🤖 由Railway API提供 - 分開執行版`;
+        
+        return report;
     }
     
     /**
