@@ -419,16 +419,38 @@ class CloudEnhancedCrawler {
         
         report += `🤖 雲端增強版爬蟲系統 v4.0`;
         
-        // 發送通知 (Railway環境下強制發送)
+        // 發送通知 (Railway環境下強制發送並等待)
+        this.log('📤 準備發送Telegram通知...', 'INFO');
         try {
             await this.sendTelegramNotification(report);
             this.log('📱 Telegram報告發送嘗試完成', 'INFO');
+            
+            // Railway環境下額外等待確保通知發送完成
+            if (this.isCloudEnvironment) {
+                this.log('☁️ 雲端環境，等待5秒確保通知發送...', 'INFO');
+                await this.sleep(5000);
+            }
         } catch (error) {
             this.log(`❌ Telegram報告發送失敗: ${error.message}`, 'ERROR');
+            
+            // 重試一次
+            this.log('🔄 重試發送Telegram通知...', 'INFO');
+            try {
+                await this.sendTelegramNotification(report);
+                this.log('📱 Telegram重試發送成功', 'INFO');
+            } catch (retryError) {
+                this.log(`❌ Telegram重試也失敗: ${retryError.message}`, 'ERROR');
+            }
         }
         
         // 保存日誌
         await this.saveLogs();
+        
+        // 雲端環境最終等待
+        if (this.isCloudEnvironment) {
+            this.log('☁️ 雲端環境最終等待...', 'INFO');
+            await this.sleep(2000);
+        }
     }
     
     /**
