@@ -419,9 +419,12 @@ class CloudEnhancedCrawler {
         
         report += `🤖 雲端增強版爬蟲系統 v4.0`;
         
-        // 發送通知
-        if (this.config.telegramConfig.testMode) {
+        // 發送通知 (Railway環境下強制發送)
+        try {
             await this.sendTelegramNotification(report);
+            this.log('📱 Telegram報告發送嘗試完成', 'INFO');
+        } catch (error) {
+            this.log(`❌ Telegram報告發送失敗: ${error.message}`, 'ERROR');
         }
         
         // 保存日誌
@@ -450,9 +453,15 @@ class CloudEnhancedCrawler {
             };
             
             const req = https.request(options, (res) => {
-                if (res.statusCode === 200) {
-                    this.log('📱 Telegram通知發送成功', 'SUCCESS');
-                }
+                let responseData = '';
+                res.on('data', chunk => responseData += chunk);
+                res.on('end', () => {
+                    if (res.statusCode === 200) {
+                        this.log('📱 Telegram通知發送成功', 'SUCCESS');
+                    } else {
+                        this.log(`❌ Telegram通知失敗，狀態碼: ${res.statusCode}，回應: ${responseData}`, 'ERROR');
+                    }
+                });
             });
             
             req.on('error', (error) => {
