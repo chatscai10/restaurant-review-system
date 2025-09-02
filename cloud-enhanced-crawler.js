@@ -393,31 +393,53 @@ class CloudEnhancedCrawler {
         const successCount = this.results.filter(r => r.success).length;
         const duration = Math.round((Date.now() - this.startTime) / 1000);
         
-        let report = `🌐 [雲端版] 爬蟲執行報告\n`;
-        report += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-        report += `⏰ 執行時間: ${new Date().toLocaleString('zh-TW')}\n`;
-        report += `☁️ 執行環境: ${this.config.cloud.isCloudEnvironment ? '雲端' : '本機'}\n`;
-        report += `⚡ 總耗時: ${duration}秒\n`;
-        report += `📊 結果: ${successCount}/${this.results.length} 成功\n\n`;
+        let report = `🟟 ＊ 每日平台評分自動更新\n`;
+        report += `🟟 ＊ 獎金以每月5號的更新訊息為計算\n`;
+        report += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
         
-        this.results.forEach((store, index) => {
-            report += `【${index + 1}】${store.name}\n`;
+        this.results.forEach((store) => {
+            const storeConfig = this.config.stores.find(s => s.name === store.name);
+            
+            report += `🟟 ${store.name}\n`;
             if (store.success) {
-                report += `⭐ 平均評分: ${store.averageRating}/5.0\n`;
+                report += `⭐ 平均評分: ${store.averageRating}/5.0\n\n`;
                 
-                Object.entries(store.platforms).forEach(([platform, data]) => {
-                    if (data.success) {
-                        const sourceIcon = data.dataSource === 'fallback' ? '📦' : '🔍';
-                        report += `${sourceIcon} ${this.getPlatformName(platform)}: ${data.rating}⭐\n`;
-                    }
-                });
+                // Google Maps
+                if (store.platforms.google && store.platforms.google.success) {
+                    const sourceIcon = store.platforms.google.dataSource === 'fallback' ? '🟟' : '🟟';
+                    const reviewCount = store.platforms.google.dataSource === 'fallback' 
+                        ? storeConfig?.fallbackData?.google?.reviewCount || '評論'
+                        : '評論';
+                    report += `${sourceIcon} Google Maps ${store.platforms.google.rating}⭐ (${reviewCount})\n`;
+                    report += `🟟 ${storeConfig?.urls?.google || ''}\n\n`;
+                }
+                
+                // UberEats
+                if (store.platforms.uber && store.platforms.uber.success) {
+                    const sourceIcon = store.platforms.uber.dataSource === 'fallback' ? '🟟' : '🟟';
+                    const reviewCount = store.platforms.uber.dataSource === 'fallback' 
+                        ? storeConfig?.fallbackData?.uber?.reviewCount || '評論'
+                        : '評論';
+                    report += `${sourceIcon} UberEats ${store.platforms.uber.rating}⭐ (${reviewCount})\n`;
+                    report += `🟟 ${storeConfig?.urls?.uber || ''}\n\n`;
+                }
+                
+                // Foodpanda
+                if (store.platforms.panda && store.platforms.panda.success) {
+                    const sourceIcon = store.platforms.panda.dataSource === 'fallback' ? '🟟' : '🟟';
+                    const reviewCount = store.platforms.panda.dataSource === 'fallback' 
+                        ? storeConfig?.fallbackData?.panda?.reviewCount || '評論'
+                        : '評論';
+                    report += `${sourceIcon} Foodpanda ${store.platforms.panda.rating}⭐ (${reviewCount})\n`;
+                    report += `🟟 ${storeConfig?.urls?.panda || ''}\n\n`;
+                }
             } else {
-                report += `❌ 查詢失敗\n`;
+                report += `❌ 查詢失敗\n\n`;
             }
-            report += '\n';
         });
         
-        report += `🤖 雲端增強版爬蟲系統 v4.0`;
+        report += `⏰ ${new Date().toLocaleString('zh-TW')} | ☁️ ${this.config.cloud.isCloudEnvironment ? 'Railway雲端' : '本機'} | ⚡ ${duration}秒\n`;
+        report += `🤖 自動評分系統 v4.0 | 📊 成功率: ${successCount}/${this.results.length}`;
         
         // 發送通知 (Railway環境下強制發送並等待)
         this.log('📤 準備發送Telegram通知...', 'INFO');
