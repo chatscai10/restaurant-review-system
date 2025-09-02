@@ -435,45 +435,51 @@ class CloudEnhancedCrawler {
      * 發送Telegram通知
      */
     async sendTelegramNotification(message) {
-        try {
-            const payload = JSON.stringify({
-                chat_id: this.config.telegramConfig.adminGroup,
-                text: message
-            });
-            
-            const options = {
-                hostname: 'api.telegram.org',
-                port: 443,
-                path: `/bot${this.config.telegramConfig.botToken}/sendMessage`,
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Content-Length': Buffer.byteLength(payload, 'utf8')
-                }
-            };
-            
-            const req = https.request(options, (res) => {
-                let responseData = '';
-                res.on('data', chunk => responseData += chunk);
-                res.on('end', () => {
-                    if (res.statusCode === 200) {
-                        this.log('📱 Telegram通知發送成功', 'SUCCESS');
-                    } else {
-                        this.log(`❌ Telegram通知失敗，狀態碼: ${res.statusCode}，回應: ${responseData}`, 'ERROR');
-                    }
+        return new Promise((resolve, reject) => {
+            try {
+                const payload = JSON.stringify({
+                    chat_id: this.config.telegramConfig.adminGroup,
+                    text: message
                 });
-            });
-            
-            req.on('error', (error) => {
-                this.log(`❌ Telegram通知失敗: ${error.message}`, 'ERROR');
-            });
-            
-            req.write(payload);
-            req.end();
-            
-        } catch (error) {
-            this.log(`❌ Telegram通知異常: ${error.message}`, 'ERROR');
-        }
+                
+                const options = {
+                    hostname: 'api.telegram.org',
+                    port: 443,
+                    path: `/bot${this.config.telegramConfig.botToken}/sendMessage`,
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Content-Length': Buffer.byteLength(payload, 'utf8')
+                    }
+                };
+                
+                const req = https.request(options, (res) => {
+                    let responseData = '';
+                    res.on('data', chunk => responseData += chunk);
+                    res.on('end', () => {
+                        if (res.statusCode === 200) {
+                            this.log('📱 Telegram通知發送成功', 'SUCCESS');
+                            resolve(responseData);
+                        } else {
+                            this.log(`❌ Telegram通知失敗，狀態碼: ${res.statusCode}，回應: ${responseData}`, 'ERROR');
+                            reject(new Error(`HTTP ${res.statusCode}: ${responseData}`));
+                        }
+                    });
+                });
+                
+                req.on('error', (error) => {
+                    this.log(`❌ Telegram通知失敗: ${error.message}`, 'ERROR');
+                    reject(error);
+                });
+                
+                req.write(payload);
+                req.end();
+                
+            } catch (error) {
+                this.log(`❌ Telegram通知異常: ${error.message}`, 'ERROR');
+                reject(error);
+            }
+        });
     }
     
     /**
