@@ -30,9 +30,7 @@ class CloudEnhancedCrawler {
             telegramConfig: {
                 botToken: process.env.TELEGRAM_BOT_TOKEN || '7659930552:AAF_jF1rAXFnjFO176-9X5fKfBwbrko8BNc',
                 adminGroup: process.env.TELEGRAM_ADMIN_GROUP || '-1002658082392',
-                employeeGroup: process.env.TELEGRAM_EMPLOYEE_GROUP || '',  // 員工群組 (可選)
-                testMode: process.env.TEST_MODE !== 'false',
-                notifyBothGroups: process.env.NOTIFY_BOTH_GROUPS === 'true'  // 是否同時通知兩個群組
+                testMode: process.env.TEST_MODE !== 'false'
             },
             
             // 雲端優化的瀏覽器設定
@@ -445,15 +443,7 @@ class CloudEnhancedCrawler {
         // 發送通知 (Railway環境下強制發送並等待)
         this.log('📤 準備發送Telegram通知...', 'INFO');
         try {
-            // 發送到管理員群組
-            await this.sendTelegramToGroup(this.config.telegramConfig.adminGroup, report, '管理員群組');
-            
-            // 如果設定了員工群組且啟用雙群組通知，也發送到員工群組
-            if (this.config.telegramConfig.employeeGroup && this.config.telegramConfig.notifyBothGroups) {
-                this.log('📤 準備發送到員工群組...', 'INFO');
-                await this.sendTelegramToGroup(this.config.telegramConfig.employeeGroup, report, '員工群組');
-            }
-            
+            await this.sendTelegramNotification(report);
             this.log('📱 Telegram報告發送嘗試完成', 'INFO');
             
             // Railway環境下額外等待確保通知發送完成
@@ -467,7 +457,7 @@ class CloudEnhancedCrawler {
             // 重試一次
             this.log('🔄 重試發送Telegram通知...', 'INFO');
             try {
-                await this.sendTelegramToGroup(this.config.telegramConfig.adminGroup, report, '管理員群組');
+                await this.sendTelegramNotification(report);
                 this.log('📱 Telegram重試發送成功', 'INFO');
             } catch (retryError) {
                 this.log(`❌ Telegram重試也失敗: ${retryError.message}`, 'ERROR');
@@ -485,13 +475,13 @@ class CloudEnhancedCrawler {
     }
     
     /**
-     * 發送Telegram通知到指定群組
+     * 發送Telegram通知
      */
-    async sendTelegramToGroup(chatId, message, groupName = '群組') {
+    async sendTelegramNotification(message) {
         return new Promise((resolve, reject) => {
             try {
                 const payload = JSON.stringify({
-                    chat_id: chatId,
+                    chat_id: this.config.telegramConfig.adminGroup,
                     text: message
                 });
                 
