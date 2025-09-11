@@ -265,9 +265,14 @@ class SmartScheduler {
     }
     
     /**
-     * 發送Telegram通知
+     * 發送Telegram通知 (已停用)
      */
     async sendTelegramNotification(message) {
+        // 🚫 通知功能已停用
+        this.log('⚠️ Telegram通知功能已停用，不發送評價通知');
+        return Promise.resolve({ success: false, reason: 'disabled' });
+        
+        /*
         try {
             this.log('📱 發送Telegram通知到管理員群組...');
             
@@ -314,6 +319,7 @@ class SmartScheduler {
         } catch (error) {
             this.log(`❌ Telegram通知發送失敗: ${error.message}`);
         }
+        */
     }
     
     /**
