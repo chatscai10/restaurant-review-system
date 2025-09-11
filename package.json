@@ -4,7 +4,8 @@
   "description": "簡易版分店評價查詢工具",
   "main": "server.js",
   "scripts": {
-    "start": "node smart-scheduler.js",
+    "start": "node verify-deployment.js",
+    "start-scheduler": "node smart-scheduler.js",
     "start-old": "node cloud-enhanced-crawler.js",
     "start-full": "node server.js",
     "dev": "nodemon server.js",
