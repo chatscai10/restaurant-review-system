@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const https = require('https');
+const fs = require('fs');
 const { MemorySystem } = require('./memory-system');
 const { PuppeteerCrawler } = require('./utils/puppeteerCrawler');
 
@@ -11,12 +12,27 @@ const PORT = process.env.PORT || 3003;
 console.log('🚀 Railway v2.0 伺服器啟動中...');
 console.log(`📍 環境: NODE_ENV=${process.env.NODE_ENV}`);
 console.log(`🔧 Port: ${PORT}`);
-console.log('🆕 版本: v2.1 - Puppeteer 真實爬蟲整合版');
+console.log('🆕 版本: v2.2 - 配置管理中心化');
+
+// 讀取店家配置
+let STORE_CONFIG = [];
+try {
+    const configPath = path.join(__dirname, 'config', 'stores.json');
+    if (fs.existsSync(configPath)) {
+        const rawData = fs.readFileSync(configPath, 'utf8');
+        STORE_CONFIG = JSON.parse(rawData);
+        console.log(`📋 已載入 ${STORE_CONFIG.length} 個店家配置`);
+    } else {
+        console.warn('⚠️ 找不到 config/stores.json，將使用空配置');
+    }
+} catch (error) {
+    console.error('❌ 讀取配置失敗:', error.message);
+}
 
 // 初始化記憶系統
 const memorySystem = new MemorySystem();
 memorySystem.init().then(() => {
-    console.log('🧠 記憶系統已啟動 - v2.1');
+    console.log('🧠 記憶系統已啟動 - v2.2');
 });
 
 // 基本中間件
@@ -28,45 +44,60 @@ app.use(express.static('public'));
 app.get('/', (req, res) => {
     res.json({
         status: 'Railway v2.0 伺服器運行中 - Puppeteer Ready',
-        version: '2.1.0',
+        version: '2.2.0',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
         features: [
             '🧠 記憶系統和評分變化追蹤',
             '🕷️ Puppeteer 真實瀏覽器爬蟲',
-            '🚫 移除所有假數據回退',
+            '📋 統一配置管理 (config/stores.json)',
             '📈 評分變化括號標示',
             '📱 自動通知排程系統'
         ],
-        memorySystemActive: true
+        memorySystemActive: true,
+        storeCount: STORE_CONFIG.length
+    });
+});
+
+// 獲取店家配置 API
+app.get('/api/config/stores', (req, res) => {
+    res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        count: STORE_CONFIG.length,
+        stores: STORE_CONFIG
     });
 });
 
 // 健康檢查API
 app.get('/health', (req, res) => {
     res.json({
-        status: 'healthy - v2.1',
+        status: 'healthy - v2.2',
         uptime: process.uptime(),
         timestamp: new Date().toISOString(),
         memorySystem: 'active',
-        crawler: 'puppeteer-ready'
+        crawler: 'puppeteer-ready',
+        configLoaded: STORE_CONFIG.length > 0
     });
 });
 
 // 分析函數 - v2.1 使用 Puppeteer 真實爬蟲
 async function performStoreAnalysis(req, res) {
     try {
-        const { stores } = req.body;
+        // 優先使用請求中的 stores，如果沒有則使用伺服器配置
+        const storesToAnalyze = (req.body.stores && Array.isArray(req.body.stores) && req.body.stores.length > 0) 
+            ? req.body.stores 
+            : STORE_CONFIG;
         
-        if (!stores || !Array.isArray(stores) || stores.length === 0) {
+        if (storesToAnalyze.length === 0) {
             return res.status(400).json({
-                error: '請提供有效的分店數據',
-                version: 'v2.1',
-                received: req.body
+                error: '沒有可用的分店數據進行分析',
+                version: 'v2.2',
+                details: '請求中未提供 stores，且伺服器配置為空'
             });
         }
 
-        console.log(`🔍 Railway v2.1 Puppeteer 分析 ${stores.length} 個分店`);
+        console.log(`🔍 Railway v2.2 Puppeteer 分析 ${storesToAnalyze.length} 個分店`);
 
         // 初始化 Puppeteer 爬蟲
         const crawler = new PuppeteerCrawler();
@@ -75,7 +106,7 @@ async function performStoreAnalysis(req, res) {
         let validStoreCount = 0;
 
         // 分析每個分店
-        for (const store of stores) {
+        for (const store of storesToAnalyze) {
             console.log(`📍 分析分店: ${store.name}`);
             
             const storeResult = {

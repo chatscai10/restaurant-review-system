@@ -11,6 +11,7 @@
  */
 
 const https = require('https');
+const http = require('http');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -25,8 +26,8 @@ class FixedCloudScheduler {
             // API設定
             railwayApiUrl: process.env.RAILWAY_URL || 'https://restaurant-review-system-production.up.railway.app',
             
-            // 查詢配置
-            queryConfig: this.parseQueryConfig(),
+            // 查詢配置 - 初始化為空，執行時動態獲取
+            queryConfig: [],
             
             // 執行設定
             maxRetries: 3,
@@ -44,37 +45,57 @@ class FixedCloudScheduler {
     parseChatIds(chatIdsStr) {
         return chatIdsStr.split(',').map(id => id.trim()).filter(id => id);
     }
-    
+
     /**
-     * 解析查詢配置 - 包含修正後的網址
+     * 獲取查詢配置 - 優先從API獲取，失敗則讀取本地配置
      */
-    parseQueryConfig() {
-        return [
-            {
-                name: '不早脆皮雞排 中壢龍崗店',
-                urls: {
-                    google: 'https://www.google.com/maps?q=320%E6%A1%83%E5%9C%92%E5%B8%82%E4%B8%AD%E5%A3%A2%E5%8D%80%E9%BE%8D%E6%9D%B1%E8%B7%AF190%E8%99%9F%E6%AD%A3%E5%B0%8D%E9%9D%A2%E4%B8%8D%E6%97%A9%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E4%B8%AD%E5%A3%A2%E9%BE%8D%E5%B4%97%E5%BA%97&ftid=0x34682372b798b33f:0xfb7f2e66227d173',
-                    uber: 'https://www.ubereats.com/store/%E4%B8%8D%E6%97%A9%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E4%B8%AD%E5%A3%A2%E9%BE%8D%E5%B4%97%E5%BA%97/3L1jndcDXGClXn3bGmlU-Q',
-                    panda: 'https://www.foodpanda.com.tw/restaurant/la6k/bu-zao-cui-pi-ji-pai-zhong-li-long-gang-dian'
-                }
-            },
-            {
-                name: '不早脆皮雞排 桃園龍安店',
-                urls: {
-                    google: 'https://www.google.com/search?kgmid=/g/11krbr1qv3&q=%E4%B8%8D%E6%97%A9%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E6%A1%83%E5%9C%92%E9%BE%8D%E5%AE%89%E5%BA%97',
-                    uber: 'https://www.ubereats.com/store/%E4%B8%8D%E6%97%A9%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92%E6%A1%83%E5%9C%92%E9%BE%8D%E5%AE%89%E5%BA%97/mY4hchI6VIKrKBjJYEGGmA',
-                    panda: 'https://www.foodpanda.com.tw/restaurant/darg/bu-zao-cui-pi-ji-pai-tao-yuan-long-an-dian'
-                }
-            },
-            {
-                name: '脆皮雞排 內壢忠孝店',
-                urls: {
-                    google: 'https://maps.google.com/maps?q=%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E5%85%A7%E5%A3%A2%E5%BF%A0%E5%AD%9D%E5%BA%97',
-                    uber: 'https://www.ubereats.com/store/%E8%84%86%E7%9A%AE%E9%9B%9E%E6%8E%92-%E5%85%A7%E5%A3%A2%E5%BF%A0%E5%AD%9D%E5%BA%97/cA165PUVSmqs2nduXGfscw',
-                    panda: 'https://www.foodpanda.com.tw/restaurant/i4bt/cui-pi-ji-pai-nei-li-zhong-xiao-dian'
-                }
+    async getQueryConfig() {
+        try {
+            // 嘗試從 API 獲取
+            const apiUrl = `${this.config.railwayApiUrl}/api/config/stores`;
+            this.log(`📥 正在從伺服器獲取店家配置: ${apiUrl}`);
+            
+            // 選擇正確的協議模組
+            const client = apiUrl.startsWith('https') ? https : http;
+
+            const config = await new Promise((resolve, reject) => {
+                client.get(apiUrl, (res) => {
+                    let data = '';
+                    res.on('data', chunk => data += chunk);
+                    res.on('end', () => {
+                        if (res.statusCode === 200) {
+                            try {
+                                const json = JSON.parse(data);
+                                resolve(json.stores);
+                            } catch (e) {
+                                reject(e);
+                            }
+                        } else {
+                            reject(new Error(`Status ${res.statusCode}`));
+                        }
+                    });
+                }).on('error', reject);
+            });
+
+            if (config && Array.isArray(config) && config.length > 0) {
+                this.log(`✅ 成功獲取 ${config.length} 個店家配置`);
+                return config;
             }
-        ];
+        } catch (error) {
+            this.log(`⚠️ 無法從 API 獲取配置 (${error.message})，嘗試讀取本地檔案`);
+        }
+
+        // 回退：讀取本地 config/stores.json
+        try {
+            const localConfigPath = path.join(__dirname, 'config', 'stores.json');
+            const localData = await fs.readFile(localConfigPath, 'utf8');
+            const localConfig = JSON.parse(localData);
+            this.log(`✅ 成功讀取本地配置: ${localConfig.length} 個店家`);
+            return localConfig;
+        } catch (error) {
+            this.log(`❌ 無法讀取本地配置: ${error.message}`);
+            return [];
+        }
     }
     
     /**
@@ -95,6 +116,13 @@ class FixedCloudScheduler {
         this.log(`⏰ 開始執行定時查詢 - ${startTime.toISOString()}`);
         
         try {
+            // 獲取店家配置
+            const stores = await this.getQueryConfig();
+            
+            if (!stores || stores.length === 0) {
+                throw new Error('無法獲取任何店家配置，終止查詢');
+            }
+
             // 初始化結果
             this.results = {
                 stores: [],
@@ -105,13 +133,13 @@ class FixedCloudScheduler {
             };
             
             // 分開執行每個分店查詢
-            for (const [index, store] of this.config.queryConfig.entries()) {
-                this.log(`\n🔍 正在查詢第 ${index + 1}/${this.config.queryConfig.length} 個分店: ${store.name}`);
+            for (const [index, store] of stores.entries()) {
+                this.log(`\n🔍 正在查詢第 ${index + 1}/${stores.length} 個分店: ${store.name}`);
                 
                 try {
                     // 準備單個分店的API請求數據
                     const singleStoreData = [{
-                        id: 1,
+                        id: store.id,
                         name: store.name,
                         urls: store.urls
                     }];
@@ -135,7 +163,7 @@ class FixedCloudScheduler {
                     }
                     
                     // 延遲2秒再查詢下一個，避免過快請求
-                    if (index < this.config.queryConfig.length - 1) {
+                    if (index < stores.length - 1) {
                         this.log(`⏳ 等待2秒後查詢下一個分店...`);
                         await this.sleep(2000);
                     }
