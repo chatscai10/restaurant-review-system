@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const https = require('https');
 const { MemorySystem } = require('./memory-system');
-const { RealDataCrawler } = require('./utils/realDataCrawler');
+const { PuppeteerCrawler } = require('./utils/puppeteerCrawler');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -11,12 +11,12 @@ const PORT = process.env.PORT || 3003;
 console.log('🚀 Railway v2.0 伺服器啟動中...');
 console.log(`📍 環境: NODE_ENV=${process.env.NODE_ENV}`);
 console.log(`🔧 Port: ${PORT}`);
-console.log('🆕 版本: v2.0 - 包含記憶系統和所有新功能');
+console.log('🆕 版本: v2.1 - Puppeteer 真實爬蟲整合版');
 
 // 初始化記憶系統
 const memorySystem = new MemorySystem();
 memorySystem.init().then(() => {
-    console.log('🧠 記憶系統已啟動 - v2.0');
+    console.log('🧠 記憶系統已啟動 - v2.1');
 });
 
 // 基本中間件
@@ -27,17 +27,16 @@ app.use(express.static('public'));
 // 健康檢查路由 - 包含版本信息
 app.get('/', (req, res) => {
     res.json({
-        status: 'Railway v2.0 伺服器運行中 - 包含記憶功能',
-        version: '2.0.0',
+        status: 'Railway v2.0 伺服器運行中 - Puppeteer Ready',
+        version: '2.1.0',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
         features: [
             '🧠 記憶系統和評分變化追蹤',
+            '🕷️ Puppeteer 真實瀏覽器爬蟲',
+            '🚫 移除所有假數據回退',
             '📈 評分變化括號標示',
-            '🔗 各平台詳情連結',
-            '⚡ 修復的平均分數計算 (4.7)',
-            '📱 自動通知排程系統',
-            '💾 歷史數據保存和比較'
+            '📱 自動通知排程系統'
         ],
         memorySystemActive: true
     });
@@ -46,60 +45,15 @@ app.get('/', (req, res) => {
 // 健康檢查API
 app.get('/health', (req, res) => {
     res.json({
-        status: 'healthy - v2.0',
+        status: 'healthy - v2.1',
         uptime: process.uptime(),
         timestamp: new Date().toISOString(),
         memorySystem: 'active',
-        features: 'all-loaded'
+        crawler: 'puppeteer-ready'
     });
 });
 
-// 分店特定數據回退函數 - 基於實際測試的修正數據
-function getStoreSpecificRating(storeName, platform) {
-    const storeData = {
-        '不早脆皮雞排 中壢龍崗店': {
-            google: 4.6,
-            uber: 4.8,
-            panda: 4.7
-        },
-        '不早脆皮雞排 桃園龍安店': {
-            google: 4.5,
-            uber: 4.7,
-            panda: 4.6
-        },
-        '脆皮雞排 內壢忠孝店': {
-            google: 4.4,
-            uber: 4.6,
-            panda: 4.5
-        }
-    };
-    
-    return storeData[storeName]?.[platform] || 4.5;
-}
-
-function getStoreSpecificReviewCount(storeName, platform) {
-    const storeReviews = {
-        '不早脆皮雞排 中壢龍崗店': {
-            google: '1,183',
-            uber: '600+',
-            panda: '500+'
-        },
-        '不早脆皮雞排 桃園龍安店': {
-            google: '856',
-            uber: '450+',
-            panda: '380+'
-        },
-        '脆皮雞排 內壢忠孝店': {
-            google: '642',
-            uber: '320+',
-            panda: '260+'
-        }
-    };
-    
-    return storeReviews[storeName]?.[platform] || 'N/A';
-}
-
-// 分析函數 - v2.0 使用真實爬蟲數據
+// 分析函數 - v2.1 使用 Puppeteer 真實爬蟲
 async function performStoreAnalysis(req, res) {
     try {
         const { stores } = req.body;
@@ -107,15 +61,15 @@ async function performStoreAnalysis(req, res) {
         if (!stores || !Array.isArray(stores) || stores.length === 0) {
             return res.status(400).json({
                 error: '請提供有效的分店數據',
-                version: 'v2.0',
+                version: 'v2.1',
                 received: req.body
             });
         }
 
-        console.log(`🔍 Railway v2.0 真實爬蟲分析 ${stores.length} 個分店`);
+        console.log(`🔍 Railway v2.1 Puppeteer 分析 ${stores.length} 個分店`);
 
-        // 初始化真實爬蟲
-        const crawler = new RealDataCrawler();
+        // 初始化 Puppeteer 爬蟲
+        const crawler = new PuppeteerCrawler();
         const analyzedStores = [];
         let totalRatingSum = 0;
         let validStoreCount = 0;
@@ -138,90 +92,60 @@ async function performStoreAnalysis(req, res) {
 
             let platformRatings = [];
 
-            // 爬取Google Maps數據 (帶回退機制)
+            // 爬取 Google Maps
             if (store.urls?.google) {
-                try {
-                    console.log(`🗺️ 爬取Google Maps: ${store.urls.google}`);
-                    const googleData = await crawler.scrapeGoogleMapsReal(store.urls.google);
-                    storeResult.platforms.google = {
-                        success: true,
-                        rating: googleData.rating || getStoreSpecificRating(store.name, 'google'),
-                        reviewCount: googleData.reviewCount || getStoreSpecificReviewCount(store.name, 'google'),
-                        source: googleData.rating ? 'Real Google Maps Data' : 'Fallback Data',
-                        url: store.urls.google
-                    };
-                    if (googleData.rating) {
-                        platformRatings.push(googleData.rating);
-                    } else {
-                        platformRatings.push(getStoreSpecificRating(store.name, 'google'));
-                    }
-                } catch (error) {
-                    console.error(`❌ Google Maps失敗，使用回退數據: ${error.message}`);
-                    const fallbackRating = getStoreSpecificRating(store.name, 'google');
-                    storeResult.platforms.google = {
-                        success: true,
-                        rating: fallbackRating,
-                        reviewCount: getStoreSpecificReviewCount(store.name, 'google'),
-                        source: 'Fallback Data',
-                        url: store.urls.google
-                    };
-                    platformRatings.push(fallbackRating);
+                console.log(`🗺️ 爬取 Google Maps: ${store.urls.google}`);
+                const googleData = await crawler.scrapeUrl('google', store.urls.google);
+                
+                storeResult.platforms.google = {
+                    success: googleData.success,
+                    rating: googleData.rating || null,
+                    reviewCount: googleData.reviewCount || null,
+                    source: googleData.success ? 'Real Puppeteer Data' : 'Failed',
+                    url: store.urls.google,
+                    error: googleData.error
+                };
+                
+                if (googleData.success && googleData.rating) {
+                    platformRatings.push(googleData.rating);
                 }
             }
 
-            // 爬取UberEats數據 (帶回退機制)
+            // 爬取 UberEats
             if (store.urls?.uber) {
-                try {
-                    console.log(`🚗 爬取UberEats: ${store.urls.uber}`);
-                    const uberData = await crawler.scrapeUberEatsReal(store.urls.uber);
-                    const fallbackRating = getStoreSpecificRating(store.name, 'uber');
-                    storeResult.platforms.uber = {
-                        success: true,
-                        rating: uberData.rating || fallbackRating,
-                        reviewCount: uberData.reviewCount || getStoreSpecificReviewCount(store.name, 'uber'),
-                        source: uberData.rating ? 'Real UberEats Data' : 'Fallback Data',
-                        url: store.urls.uber
-                    };
-                    platformRatings.push(uberData.rating || fallbackRating);
-                } catch (error) {
-                    console.error(`❌ UberEats失敗，使用回退數據: ${error.message}`);
-                    const fallbackRating = getStoreSpecificRating(store.name, 'uber');
-                    storeResult.platforms.uber = {
-                        success: true,
-                        rating: fallbackRating,
-                        reviewCount: getStoreSpecificReviewCount(store.name, 'uber'),
-                        source: 'Fallback Data',
-                        url: store.urls.uber
-                    };
-                    platformRatings.push(fallbackRating);
+                console.log(`🚗 爬取 UberEats: ${store.urls.uber}`);
+                const uberData = await crawler.scrapeUrl('uber', store.urls.uber);
+                
+                storeResult.platforms.uber = {
+                    success: uberData.success,
+                    rating: uberData.rating || null,
+                    reviewCount: uberData.reviewCount || null,
+                    source: uberData.success ? 'Real Puppeteer Data' : 'Failed',
+                    url: store.urls.uber,
+                    error: uberData.error
+                };
+
+                if (uberData.success && uberData.rating) {
+                    platformRatings.push(uberData.rating);
                 }
             }
 
-            // 爬取Foodpanda數據 (帶回退機制)
+            // 爬取 Foodpanda
             if (store.urls?.panda) {
-                try {
-                    console.log(`🐼 爬取Foodpanda: ${store.urls.panda}`);
-                    const pandaData = await crawler.scrapeFoodpandaReal(store.urls.panda);
-                    const fallbackRating = getStoreSpecificRating(store.name, 'panda');
-                    storeResult.platforms.panda = {
-                        success: true,
-                        rating: pandaData.rating || fallbackRating,
-                        reviewCount: pandaData.reviewCount || getStoreSpecificReviewCount(store.name, 'panda'),
-                        source: pandaData.rating ? 'Real Foodpanda Data' : 'Fallback Data',
-                        url: store.urls.panda
-                    };
-                    platformRatings.push(pandaData.rating || fallbackRating);
-                } catch (error) {
-                    console.error(`❌ Foodpanda失敗，使用回退數據: ${error.message}`);
-                    const fallbackRating = getStoreSpecificRating(store.name, 'panda');
-                    storeResult.platforms.panda = {
-                        success: true,
-                        rating: fallbackRating,
-                        reviewCount: getStoreSpecificReviewCount(store.name, 'panda'),
-                        source: 'Fallback Data',
-                        url: store.urls.panda
-                    };
-                    platformRatings.push(fallbackRating);
+                console.log(`🐼 爬取 Foodpanda: ${store.urls.panda}`);
+                const pandaData = await crawler.scrapeUrl('panda', store.urls.panda);
+                
+                storeResult.platforms.panda = {
+                    success: pandaData.success,
+                    rating: pandaData.rating || null,
+                    reviewCount: pandaData.reviewCount || null,
+                    source: pandaData.success ? 'Real Puppeteer Data' : 'Failed',
+                    url: store.urls.panda,
+                    error: pandaData.error
+                };
+
+                if (pandaData.success && pandaData.rating) {
+                    platformRatings.push(pandaData.rating);
                 }
             }
 
@@ -235,6 +159,7 @@ async function performStoreAnalysis(req, res) {
                 storeResult.insights.performance = storeAverage >= 4.5 ? '優秀' : storeAverage >= 4.0 ? '良好' : '需改善';
                 storeResult.insights.recommendation = `基於 ${platformRatings.length} 個平台的真實數據分析`;
             } else {
+                storeResult.averageRating = 0;
                 storeResult.insights.performance = '無數據';
                 storeResult.insights.recommendation = '無法獲取有效評分數據';
             }
@@ -247,44 +172,37 @@ async function performStoreAnalysis(req, res) {
 
         const results = {
             serverInfo: {
-                environment: 'Railway Cloud v2.0 - Real Data',
+                environment: process.env.NODE_ENV || 'development',
                 timestamp: new Date().toISOString(),
                 location: 'Cloud Server',
-                version: '2.0.0',
-                crawlerType: 'RealDataCrawler'
+                version: '2.1.0',
+                crawlerType: 'PuppeteerCrawler'
             },
             summary: {
                 totalStores: stores.length,
                 averageRating: Math.round(overallAverage * 10) / 10,
                 totalPlatforms: 3,
                 analysisTime: new Date().toISOString(),
-                status: 'Railway v2.0 真實數據分析',
-                dataSource: 'Live Platform Crawling'
+                status: 'Puppeteer 真實數據分析完成',
+                dataSource: 'Live Puppeteer Crawling'
             },
             stores: analyzedStores
         };
 
-        console.log(`✅ Railway v2.0 真實數據分析完成 - 平均評分: ${Math.round(overallAverage * 10) / 10}⭐`);
+        console.log(`✅ Railway v2.1 分析完成 - 平均評分: ${Math.round(overallAverage * 10) / 10}⭐`);
         
-        // 🧠 記憶系統處理 - v2.0
-        let memoryComparison = null;
+        // 🧠 記憶系統處理
         try {
             console.log('🧠 啟動記憶系統處理...');
-            
-            // 比較昨日數據
-            memoryComparison = await memorySystem.compareWithYesterday(results);
-            
-            // 保存今日數據
+            const memoryComparison = await memorySystem.compareWithYesterday(results);
             await memorySystem.saveToday(results);
             
-            // 添加記憶信息到結果
             results.memory = {
                 comparison: memoryComparison,
                 report: memorySystem.generateMemoryReport(memoryComparison),
-                version: 'v2.0'
+                version: 'v2.1'
             };
             
-            // 為每個分店添加評分變化標示
             if (memoryComparison && memoryComparison.hasComparison) {
                 results.stores = results.stores.map(store => {
                     const storeComparison = memoryComparison.stores.find(s => s.storeName === store.name);
@@ -295,14 +213,12 @@ async function performStoreAnalysis(req, res) {
                     return store;
                 });
             }
-            
-            console.log('🧠 記憶系統 v2.0 處理完成');
-            
+            console.log('🧠 記憶系統處理完成');
         } catch (memoryError) {
             console.error('⚠️ 記憶系統錯誤:', memoryError.message);
         }
         
-        // 如果設定了Telegram，發送測試通知
+        // 發送測試通知 (僅在有 token 時)
         if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_IDS) {
             setTimeout(() => {
                 sendRailwayTestNotification(results);
@@ -312,12 +228,12 @@ async function performStoreAnalysis(req, res) {
         res.json(results);
 
     } catch (error) {
-        console.error('❌ Railway v2.0 分析錯誤:', error);
+        console.error('❌ Railway v2.1 分析錯誤:', error);
         res.status(500).json({
-            error: 'Railway v2.0 分析過程中發生錯誤',
+            error: '分析過程中發生錯誤',
             details: error.message,
             timestamp: new Date().toISOString(),
-            version: '2.0.0'
+            version: '2.1.0'
         });
     }
 }
